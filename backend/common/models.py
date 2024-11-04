@@ -9,6 +9,7 @@ class User(BaseModel):
     password_hash: str
     email: str
     full_name: str = ""
+    revolut_id: Optional[str] = None
     group_ids: List[str] = []
 
 
