@@ -38,6 +38,7 @@ class Product(BaseModel):
 
 class Bill(BaseModel):
     id: str
+    owner_id: str
     group_id: str
     name: str
     description: str = ""
