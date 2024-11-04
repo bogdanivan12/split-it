@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 from typing import List, Optional
 from datetime import datetime
+from enum import Enum
 
 
 class User(BaseModel):
@@ -50,6 +51,18 @@ class Bill(BaseModel):
     payment_ids: List[str] = []
 
 
+class PaymentMethod(Enum):
+    NOT_SELECTED = "NOT_SELECTED"
+    CASH = "CASH"
+    REVOLUT = "REVOLUT"
+
+
+class PaymentStatus(Enum):
+    NOT_STARTED = "NOT_STARTED"
+    IN_PROGRESS = "IN_PROGRESS"
+    COMPLETED = "COMPLETED"
+
+
 class Payment(BaseModel):
     id: str
     bill_id: str
@@ -57,8 +70,19 @@ class Payment(BaseModel):
     payer_id: str
     recipient_id: str
     date: datetime
-    method: str = "not selected"  # e.g., "cash", "revolut" etc.
-    status: str = "not started"  # e.g., "in progress", "completed" etc.
+    method: PaymentMethod = PaymentMethod.NOT_SELECTED
+    status: PaymentStatus = PaymentStatus.NOT_STARTED
+
+
+class RequestStatus(Enum):
+    PENDING = "PENDING"
+    ACCEPTED = "ACCEPTED"
+    DECLINED = "DECLINED"
+
+
+class RequestType(Enum):
+    JOIN_GROUP = "JOIN_GROUP"
+    JOIN_MINIGAME = "JOIN_MINIGAME"
 
 
 class Request(BaseModel):
@@ -67,5 +91,5 @@ class Request(BaseModel):
     sender_id: str
     recipient_id: str
     date: datetime
-    type: str  # e.g., "join group", "join minigame" etc.
-    status: str = "pending"  # e.g., "declined", "accepted" etc.
+    type: RequestType
+    status: RequestStatus = RequestStatus.PENDING
