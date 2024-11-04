@@ -9,6 +9,7 @@ class User(BaseModel):
     password_hash: str
     email: str
     full_name: str = ""
+    phone_number: Optional[str] = None
     revolut_id: Optional[str] = None
     group_ids: List[str] = []
 
@@ -58,3 +59,13 @@ class Payment(BaseModel):
     date: datetime
     method: str = "not selected"  # e.g., "cash", "revolut" etc.
     status: str = "not started"  # e.g., "in progress", "completed" etc.
+
+
+class Request(BaseModel):
+    id: str
+    group_id: str
+    sender_id: str
+    recipient_id: str
+    date: datetime
+    type: str  # e.g., "join group", "join minigame" etc.
+    status: str = "pending"  # e.g., "declined", "accepted" etc.
