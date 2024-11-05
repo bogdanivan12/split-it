@@ -1,38 +1,48 @@
 import {
   View,
   Text,
-  StyleSheet,
   TextInput,
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
-  Image,
   Keyboard,
   Animated,
   Easing,
 } from "react-native";
 import React, { useEffect, useState } from "react";
-import Colors from "@/constants/Theme";
+import { Colors } from "@/constants/Theme";
+import { signUpStyles as styles } from "@/constants/SharedStyles";
 
 export default function Register() {
   const [logoPosition] = useState(new Animated.Value(0));
 
-  const [rotateAnim] = useState(new Animated.Value(0)); // Rotation animated value
+  const [scaleAnim] = useState(new Animated.Value(1));
   useEffect(() => {
     Animated.loop(
       Animated.sequence([
-        Animated.delay(1000),
-        Animated.timing(rotateAnim, {
-          toValue: 1,
-          duration: 10000,
-          easing: Easing.elastic(5),
+        Animated.delay(10000),
+        Animated.timing(scaleAnim, {
+          toValue: -1,
+          duration: 600,
+          easing: Easing.linear,
           useNativeDriver: true,
         }),
-        Animated.delay(2500),
-        Animated.timing(rotateAnim, {
-          toValue: 0,
-          duration: 10000,
-          easing: Easing.elastic(5),
+        Animated.timing(scaleAnim, {
+          toValue: 1,
+          duration: 600,
+          easing: Easing.linear,
+          useNativeDriver: true,
+        }),
+        Animated.timing(scaleAnim, {
+          toValue: -1,
+          duration: 600,
+          easing: Easing.linear,
+          useNativeDriver: true,
+        }),
+        Animated.timing(scaleAnim, {
+          toValue: 1,
+          duration: 600,
+          easing: Easing.linear,
           useNativeDriver: true,
         }),
       ])
@@ -64,12 +74,15 @@ export default function Register() {
       keyboardDidHideListener.remove();
       keyboardDidShowListener.remove();
     };
-  }, [logoPosition, rotateAnim]);
+  }, [logoPosition]);
 
-  const spin = rotateAnim.interpolate({
+  const flip = scaleAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: ["0deg", "360deg"],
+    outputRange: [0, 1],
   });
+
+  const submit = () => {};
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -83,32 +96,32 @@ export default function Register() {
       >
         <Animated.Image
           source={require("@/assets/images/Logo1.png")}
-          style={[styles.logo, { transform: [{ rotate: spin }] }]}
+          style={[styles.logo, { transform: [{ scaleX: flip }] }]}
         />
       </Animated.View>
       <View style={styles.container}>
         <View style={styles.registerBox}>
-          <Text style={styles.headerText}>Register</Text>
+          <Text style={styles.headerText}>Get ready to Split-It</Text>
 
           <TextInput
             style={styles.input}
             placeholder="Username"
-            placeholderTextColor="#ccc"
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Email"
-            placeholderTextColor="#ccc"
-            keyboardType="email-address"
+            placeholderTextColor={Colors.theme1.inputPlaceholder}
           />
           <TextInput
             style={styles.input}
             placeholder="Password"
-            placeholderTextColor="#ccc"
+            placeholderTextColor={Colors.theme1.inputPlaceholder}
+            secureTextEntry={true}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Confirm password"
+            placeholderTextColor={Colors.theme1.inputPlaceholder}
             secureTextEntry={true}
           />
 
-          <TouchableOpacity style={styles.button}>
+          <TouchableOpacity onPress={submit} style={styles.button}>
             <Text style={styles.buttonText}>Sign Up</Text>
           </TouchableOpacity>
         </View>
@@ -116,67 +129,3 @@ export default function Register() {
     </KeyboardAvoidingView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: "center",
-    backgroundColor: Colors.theme1.background2,
-  },
-  logoContainer: {
-    position: "absolute",
-    top: "5%",
-    right: 0,
-    left: 0,
-    alignItems: "center",
-    zIndex: 100,
-  },
-  registerBox: {
-    backgroundColor: Colors.theme1.background1,
-    padding: 20,
-    borderRadius: 10,
-    marginHorizontal: 20,
-    shadowColor: Colors.theme1.tint,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.2,
-    shadowRadius: 5,
-    elevation: 5,
-    alignItems: "center",
-  },
-  headerText: {
-    fontFamily: 'AlegreyaBold',
-    fontSize: 24,
-    color: Colors.theme1.text,
-    marginBottom: 20,
-    textAlign: "center",
-  },
-  input: {
-    fontFamily: 'AlegreyaRegular',
-    height: 40,
-    width: "90%",
-    backgroundColor: Colors.theme1.inputBackground,
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    marginBottom: 15,
-    color: Colors.theme1.inputText,
-  },
-  logo: {
-    width: 100,
-    height: 100,
-    alignSelf: "center",
-  },
-  button: {
-    backgroundColor: Colors.theme1.button,
-    paddingVertical: 12,
-    borderRadius: 8,
-    alignItems: "center",
-    marginTop: 10,
-    width: "45%",
-  },
-  buttonText: {
-    color: Colors.theme1.text,
-    fontSize: 16,
-    fontFamily: 'AlegreyaMedium',
-  },
-});
