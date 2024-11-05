@@ -6,7 +6,7 @@ export default function Groups() {
   return (
     <View style={styles.container}>
       <Text>Groups</Text>
-      <Link asChild href="/Group/group1">
+      <Link asChild href="/(group)/group1">
         <Pressable style={styles.button}>
             <Text>Go to group group1</Text>
         </Pressable>

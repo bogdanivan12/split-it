@@ -60,7 +60,7 @@ function RootLayoutNav() {
         <Stack.Screen name="(account)" options={{ headerShown: false }} />
         <Stack.Screen name="(acctabs)" options={{ headerShown: false }} />
         <Stack.Screen
-          name="Group/[id]"
+          name="(group)/[id]"
           options={(o) => {
             return {
               title: `${(o.route.params as any).id}`,
