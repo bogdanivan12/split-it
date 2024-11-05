@@ -12,7 +12,7 @@ import {
   Easing,
 } from "react-native";
 import React, { useEffect, useState } from "react";
-import Colors from "@/constants/Colors";
+import Colors from "@/constants/Theme";
 
 export default function Register() {
   const [logoPosition] = useState(new Animated.Value(0));
@@ -144,13 +144,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   headerText: {
+    fontFamily: 'AlegreyaBold',
     fontSize: 24,
-    fontWeight: "bold",
     color: Colors.theme1.text,
     marginBottom: 20,
     textAlign: "center",
   },
   input: {
+    fontFamily: 'AlegreyaRegular',
     height: 40,
     width: "90%",
     backgroundColor: Colors.theme1.inputBackground,
@@ -176,6 +177,6 @@ const styles = StyleSheet.create({
   buttonText: {
     color: Colors.theme1.text,
     fontSize: 16,
-    fontWeight: "bold",
+    fontFamily: 'AlegreyaMedium',
   },
 });
