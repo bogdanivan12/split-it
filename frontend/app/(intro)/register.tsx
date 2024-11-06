@@ -8,12 +8,14 @@ import {
   Keyboard,
   Animated,
   Easing,
+  ScrollView,
 } from "react-native";
 import React, { useEffect, useState } from "react";
 import { Colors } from "@/constants/Theme";
 import { signUpStyles as styles } from "@/constants/SharedStyles";
 
 export default function Register() {
+  
   const [logoPosition] = useState(new Animated.Value(0));
 
   const [scaleAnim] = useState(new Animated.Value(1));
@@ -33,18 +35,6 @@ export default function Register() {
           easing: Easing.linear,
           useNativeDriver: true,
         }),
-        Animated.timing(scaleAnim, {
-          toValue: -1,
-          duration: 600,
-          easing: Easing.linear,
-          useNativeDriver: true,
-        }),
-        Animated.timing(scaleAnim, {
-          toValue: 1,
-          duration: 600,
-          easing: Easing.linear,
-          useNativeDriver: true,
-        }),
       ])
     ).start();
 
@@ -52,7 +42,7 @@ export default function Register() {
       "keyboardDidShow",
       () => {
         Animated.timing(logoPosition, {
-          toValue: -20,
+          toValue: -15,
           duration: 300,
           useNativeDriver: true,
         }).start();
@@ -101,29 +91,35 @@ export default function Register() {
       </Animated.View>
       <View style={styles.container}>
         <View style={styles.registerBox}>
-          <Text style={styles.headerText}>Get ready to Split-It</Text>
+          <ScrollView
+            contentContainerStyle={styles.scrollContainer}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+          >
+            <Text style={styles.headerText}>Get ready to Split-It</Text>
 
-          <TextInput
-            style={styles.input}
-            placeholder="Username"
-            placeholderTextColor={Colors.theme1.inputPlaceholder}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Password"
-            placeholderTextColor={Colors.theme1.inputPlaceholder}
-            secureTextEntry={true}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Confirm password"
-            placeholderTextColor={Colors.theme1.inputPlaceholder}
-            secureTextEntry={true}
-          />
+            <TextInput
+              style={styles.input}
+              placeholder="Username"
+              placeholderTextColor={Colors.theme1.inputPlaceholder}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Password"
+              placeholderTextColor={Colors.theme1.inputPlaceholder}
+              secureTextEntry={true}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Confirm password"
+              placeholderTextColor={Colors.theme1.inputPlaceholder}
+              secureTextEntry={true}
+            />
 
-          <TouchableOpacity onPress={submit} style={styles.button}>
-            <Text style={styles.buttonText}>Sign Up</Text>
-          </TouchableOpacity>
+            <TouchableOpacity onPress={submit} style={styles.button}>
+              <Text style={styles.buttonText}>Sign Up</Text>
+            </TouchableOpacity>
+          </ScrollView>
         </View>
       </View>
     </KeyboardAvoidingView>

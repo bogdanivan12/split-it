@@ -25,7 +25,7 @@ export const signUpStyles = StyleSheet.create({
       shadowOpacity: 0.2,
       shadowRadius: 5,
       elevation: 5,
-      alignItems: "center",
+      maxHeight: "50%",
     },
     headerText: {
       fontFamily: "AlegreyaBold",
@@ -34,10 +34,15 @@ export const signUpStyles = StyleSheet.create({
       marginBottom: 20,
       textAlign: "center",
     },
+    scrollContainer: {
+      flexGrow: 1,
+      justifyContent: "center",
+      alignContent: "center",
+    },
     input: {
       fontFamily: "AlegreyaRegular",
       height: 40,
-      width: "90%",
+      width: "100%",
       backgroundColor: Colors.theme1.inputBackground,
       borderWidth: 1,
       borderRadius: 8,
@@ -55,8 +60,9 @@ export const signUpStyles = StyleSheet.create({
       paddingVertical: 12,
       borderRadius: 8,
       alignItems: "center",
+      alignSelf: 'center',
       marginTop: 10,
-      width: "45%",
+      width: "65%",
     },
     buttonText: {
       color: Colors.theme1.text,

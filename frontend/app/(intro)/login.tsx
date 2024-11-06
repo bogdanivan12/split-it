@@ -8,6 +8,7 @@ import {
   Keyboard,
   Animated,
   Easing,
+  ScrollView,
 } from "react-native";
 import React, { useEffect, useState } from "react";
 import { Colors } from "@/constants/Theme";
@@ -22,18 +23,6 @@ export default function Login() {
     Animated.loop(
       Animated.sequence([
         Animated.delay(10000),
-        Animated.timing(scaleAnim, {
-          toValue: -1,
-          duration: 600,
-          easing: Easing.linear,
-          useNativeDriver: true,
-        }),
-        Animated.timing(scaleAnim, {
-          toValue: 1,
-          duration: 600,
-          easing: Easing.linear,
-          useNativeDriver: true,
-        }),
         Animated.timing(scaleAnim, {
           toValue: -1,
           duration: 600,
@@ -104,6 +93,11 @@ export default function Login() {
       </Animated.View>
       <View style={styles.container}>
         <View style={styles.registerBox}>
+        <ScrollView
+            contentContainerStyle={styles.scrollContainer}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+          >
           <Text style={styles.headerText}>Let's get into it!</Text>
 
           <TextInput
@@ -121,6 +115,7 @@ export default function Login() {
           <TouchableOpacity onPress={submit} style={styles.button}>
             <Text style={styles.buttonText}>Login</Text>
           </TouchableOpacity>
+          </ScrollView>
         </View>
       </View>
     </KeyboardAvoidingView>
