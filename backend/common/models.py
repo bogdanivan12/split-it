@@ -1,18 +1,29 @@
-from pydantic import BaseModel
-from typing import List, Optional
+from pydantic import BaseModel, Field, EmailStr, BeforeValidator
+from typing import List, Optional, Annotated
 from datetime import datetime
 from enum import Enum
 
 
+PyObjectId = Annotated[str, BeforeValidator(str)]
+
+
 class User(BaseModel):
-    id: str
-    username: str
-    password_hash: str
-    email: str
-    full_name: str = ""
-    phone_number: Optional[str] = None
-    revolut_id: Optional[str] = None
-    group_ids: List[str] = []
+    id: Optional[PyObjectId] = Field(alias="_id", default=None)
+    username: PyObjectId = Field(min_length=5, max_length=20)
+    email: EmailStr = Field(min_length=5, max_length=50)
+    full_name: Optional[str] = Field(max_length=50, default="")
+    phone_number: Optional[str] = Field(min_length=9, max_length=15,
+                                        default=None)
+    revolut_id: Optional[str] = Field(min_length=5, max_length=20,
+                                      default=None)
+    group_ids: List[str] = Field(default_factory=list)
+
+    class Config:
+        populate_by_name = True
+
+
+class UserInDB(User):
+    hashed_password: str
 
 
 class Group(BaseModel):
