@@ -1,6 +1,6 @@
 import React from "react";
 import { Tabs } from "expo-router";
-import { StyledTabs } from "@/constants/ThemedComponents";
+import { StyledTabs } from "@/components/StyledTabs";
 import { Entypo, FontAwesome } from "@expo/vector-icons";
 
 export default function Layout() {

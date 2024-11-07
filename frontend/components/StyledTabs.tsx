@@ -1,6 +1,6 @@
 import { Tabs as DTabs } from "expo-router";
 import type { ComponentProps } from "react";
-import { Colors } from "./Theme";
+import { Colors } from "../constants/Theme";
 
 export const StyledTabs = (props: ComponentProps<typeof DTabs>) => {
   return (

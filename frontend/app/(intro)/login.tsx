@@ -9,6 +9,7 @@ import {
   Animated,
   Easing,
   ScrollView,
+  TouchableWithoutFeedback,
 } from "react-native";
 import React, { useEffect, useState } from "react";
 import { Colors } from "@/constants/Theme";
@@ -76,49 +77,54 @@ export default function Login() {
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={styles.container}
+    <TouchableWithoutFeedback
+      onPress={() => {
+        Keyboard.dismiss();
+      }}
     >
-      <Animated.View
-        style={[
-          styles.logoContainer,
-          { transform: [{ translateY: logoPosition }] },
-        ]}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={styles.container}
       >
-        <Animated.Image
-          source={require("@/assets/images/Logo1.png")}
-          style={[styles.logo, { transform: [{ scaleX: flip }] }]}
-        />
-      </Animated.View>
-      <View style={styles.container}>
-        <View style={styles.registerBox}>
-        <ScrollView
-            contentContainerStyle={styles.scrollContainer}
-            showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled"
-          >
-          <Text style={styles.headerText}>Let's get into it!</Text>
-
-          <TextInput
-            style={styles.input}
-            placeholder="Username"
-            placeholderTextColor={Colors.theme1.inputPlaceholder}
+        <Animated.View
+          style={[
+            styles.logoContainer,
+            { transform: [{ translateY: logoPosition }] },
+          ]}
+        >
+          <Animated.Image
+            source={require("@/assets/images/Logo1.png")}
+            style={[styles.logo, { transform: [{ scaleX: flip }] }]}
           />
-          <TextInput
-            style={styles.input}
-            placeholder="Password"
-            placeholderTextColor={Colors.theme1.inputPlaceholder}
-            secureTextEntry={true}
-          />
+        </Animated.View>
+        <View style={styles.container}>
+          <View style={styles.registerBox}>
+            <ScrollView
+              contentContainerStyle={styles.scrollContainer}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+            >
+              <Text style={styles.headerText}>Let's get into it!</Text>
 
-          <TouchableOpacity onPress={submit} style={styles.button}>
-            <Text style={styles.buttonText}>Login</Text>
-          </TouchableOpacity>
-          </ScrollView>
+              <TextInput
+                style={styles.input}
+                placeholder="Username"
+                placeholderTextColor={Colors.theme1.inputPlaceholder}
+              />
+              <TextInput
+                style={styles.input}
+                placeholder="Password"
+                placeholderTextColor={Colors.theme1.inputPlaceholder}
+                secureTextEntry={true}
+              />
+
+              <TouchableOpacity onPress={submit} style={styles.button}>
+                <Text style={styles.buttonText}>Login</Text>
+              </TouchableOpacity>
+            </ScrollView>
+          </View>
         </View>
-      </View>
-    </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
+    </TouchableWithoutFeedback>
   );
 }
-
