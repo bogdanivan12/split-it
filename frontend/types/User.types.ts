@@ -4,4 +4,5 @@ export type User = {
   fullName: string;
   groupIds: string[];
   phoneNumber: string;
+  email: string;
 };

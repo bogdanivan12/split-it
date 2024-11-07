@@ -42,7 +42,7 @@ export default function Register() {
       "keyboardDidShow",
       () => {
         Animated.timing(logoPosition, {
-          toValue: -15,
+          toValue: -25,
           duration: 300,
           useNativeDriver: true,
         }).start();
@@ -76,7 +76,7 @@ export default function Register() {
   return (
     <TouchableWithoutFeedback
       onPress={() => {
-        Keyboard.dismiss();
+        if (Keyboard.isVisible()) Keyboard.dismiss();
       }}
     >
       <KeyboardAvoidingView
@@ -103,27 +103,34 @@ export default function Register() {
             >
               <Text style={styles.headerText}>Get ready to Split-It</Text>
 
-              <TextInput
-                style={styles.input}
-                placeholder="Username"
-                placeholderTextColor={Colors.theme1.inputPlaceholder}
-              />
-              <TextInput
-                style={styles.input}
-                placeholder="Password"
-                placeholderTextColor={Colors.theme1.inputPlaceholder}
-                secureTextEntry={true}
-              />
-              <TextInput
-                style={styles.input}
-                placeholder="Confirm password"
-                placeholderTextColor={Colors.theme1.inputPlaceholder}
-                secureTextEntry={true}
-              />
+              <View onStartShouldSetResponder={() => true}>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Username"
+                  placeholderTextColor={Colors.theme1.inputPlaceholder}
+                />
+                <TextInput
+                  style={styles.input}
+                  placeholder="Email"
+                  placeholderTextColor={Colors.theme1.inputPlaceholder}
+                />
+                <TextInput
+                  style={styles.input}
+                  placeholder="Password"
+                  placeholderTextColor={Colors.theme1.inputPlaceholder}
+                  secureTextEntry={true}
+                />
+                <TextInput
+                  style={styles.input}
+                  placeholder="Confirm password"
+                  placeholderTextColor={Colors.theme1.inputPlaceholder}
+                  secureTextEntry={true}
+                />
 
-              <TouchableOpacity onPress={submit} style={styles.button}>
-                <Text style={styles.buttonText}>Sign Up</Text>
-              </TouchableOpacity>
+                <TouchableOpacity onPress={submit} style={styles.button}>
+                  <Text style={styles.buttonText}>Sign Up</Text>
+                </TouchableOpacity>
+              </View>
             </ScrollView>
           </View>
         </View>

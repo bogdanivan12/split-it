@@ -12,19 +12,20 @@ import {
   Animated,
   Easing,
 } from "react-native";
-import React, { useEffect, useLayoutEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { User } from "@/types/User.types";
-import { FontAwesome } from "@expo/vector-icons"; // Make sure to install @expo/vector-icons
+import { FontAwesome } from "@expo/vector-icons";
 import { Colors } from "@/constants/Theme";
 import { generalStyles } from "@/constants/SharedStyles";
 import { router } from "expo-router";
 
-const hardcodedUser = {
+const hardcodedUser: User = {
   id: "1",
   fullName: "Vlad Rosu",
   groupIds: ["Group1", "Group2"],
   phoneNumber: "123456",
   username: "vlandero",
+  email: "vlad@vlad.ro",
 };
 
 const ProfileField = ({
@@ -32,16 +33,18 @@ const ProfileField = ({
   name,
   value,
   onChange,
+  editable = true,
 }: {
   isEditing: boolean;
   name: string;
   value: string;
   onChange: (text: string) => void;
+  editable?: boolean;
 }) => {
   return (
     <View style={styles.fieldContainer}>
       <Text style={styles.label}>{name}:</Text>
-      {isEditing ? (
+      {isEditing && editable ? (
         <TextInput style={styles.input} value={value} onChangeText={onChange} />
       ) : (
         <Text style={styles.value}>{value}</Text>
@@ -59,7 +62,7 @@ export default function Profile() {
   const [animPlay, setAnimPlay] = useState(false);
 
   const [scaleAnim] = useState(new Animated.Value(1));
-  const timeToFlip = 1000;
+  const timeToFlip = 700;
 
   useEffect(() => {
     if (!animPlay) return;
@@ -144,64 +147,81 @@ export default function Profile() {
             <Text style={styles.title}>Profile</Text>
             {!isEditing && (
               <TouchableOpacity onPress={handleEditToggle}>
-                <FontAwesome name="pencil" size={24} color="black" />
+                <FontAwesome name="pencil" size={24} color={Colors.theme1.text2} />
               </TouchableOpacity>
             )}
           </View>
           <ScrollView
+            contentContainerStyle={generalStyles.scrollContainer}
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
           >
-            <ProfileField
-              isEditing={isEditing}
-              name="Full Name"
-              onChange={(text) =>
-                !actionsBlocked &&
-                setEditedUser({ ...editedUser, fullName: text })
-              }
-              value={editedUser.fullName}
-            />
-            <ProfileField
-              isEditing={isEditing}
-              name="Phone Number"
-              onChange={(text) =>
-                !actionsBlocked &&
-                setEditedUser(
-                  {
-                    ...editedUser,
-                    phoneNumber: text,
-                  }
-                  /* verify phone number here */
-                )
-              }
-              value={editedUser.phoneNumber}
-            />
-            <ProfileField
-              isEditing={isEditing}
-              name="Username"
-              onChange={(text) =>
-                !actionsBlocked &&
-                setEditedUser({ ...editedUser, username: text })
-              }
-              value={editedUser.username}
-            />
+            <View onStartShouldSetResponder={() => true}>
+              <ProfileField
+                isEditing={isEditing}
+                name="Username"
+                editable={false}
+                onChange={(text) =>
+                  !actionsBlocked &&
+                  setEditedUser({ ...editedUser, username: text })
+                }
+                value={editedUser.username}
+              />
 
-            {isEditing && (
-              <View style={styles.buttonsContainer}>
-                <TouchableOpacity
-                  style={styles.backButton}
-                  onPress={cancelEdit}
-                >
-                  <Text style={styles.buttonText}>Back</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.saveButton}
-                  onPress={handleSave}
-                >
-                  <Text style={styles.buttonText}>Save</Text>
-                </TouchableOpacity>
-              </View>
-            )}
+              <ProfileField
+                isEditing={isEditing}
+                name="Email"
+                editable={false}
+                onChange={(text) =>
+                  !actionsBlocked &&
+                  setEditedUser({ ...editedUser, email: text })
+                }
+                value={editedUser.email}
+              />
+
+              <ProfileField
+                isEditing={isEditing}
+                name="Full Name"
+                onChange={(text) =>
+                  !actionsBlocked &&
+                  setEditedUser({ ...editedUser, fullName: text })
+                }
+                value={editedUser.fullName}
+              />
+
+              <ProfileField
+                isEditing={isEditing}
+                name="Phone Number"
+                onChange={(text) =>
+                  !actionsBlocked &&
+                  setEditedUser(
+                    {
+                      ...editedUser,
+                      phoneNumber: text,
+                    }
+                    // verify phone number mechanism
+                  )
+                }
+                value={editedUser.phoneNumber}
+              />
+
+              {isEditing && (
+                <View style={styles.buttonsContainer}>
+                  <TouchableOpacity
+                    style={styles.backButton}
+                    onPress={cancelEdit}
+                  >
+                    <Text style={styles.buttonText}>Back</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.saveButton}
+                    onPress={handleSave}
+                  >
+                    <Text style={styles.buttonText}>Save</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+            </View>
           </ScrollView>
         </Animated.View>
         <TouchableOpacity style={styles.logoutButton} onPress={logout}>

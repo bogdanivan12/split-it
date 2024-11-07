@@ -13,6 +13,11 @@ export const generalStyles = StyleSheet.create({
     marginBottom: 15,
     color: Colors.theme1.inputText,
   },
+  scrollContainer: {
+    flexGrow: 1,
+    justifyContent: "center",
+    alignContent: "center",
+  },
 });
 
 export const signUpStyles = StyleSheet.create({
@@ -39,7 +44,7 @@ export const signUpStyles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 5,
     elevation: 5,
-    maxHeight: "50%",
+    maxHeight: "60%",
   },
   headerText: {
     fontFamily: "AlegreyaBold",
@@ -48,12 +53,8 @@ export const signUpStyles = StyleSheet.create({
     marginBottom: 20,
     textAlign: "center",
   },
-  scrollContainer: {
-    flexGrow: 1,
-    justifyContent: "center",
-    alignContent: "center",
-  },
   input: generalStyles.input,
+  scrollContainer: generalStyles.scrollContainer,
   logo: {
     width: 100,
     height: 100,
