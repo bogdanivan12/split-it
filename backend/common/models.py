@@ -27,12 +27,12 @@ class UserInDB(User):
 
 
 class Group(BaseModel):
-    id: str
-    name: str
-    description: str = ""
-    owner_id: str
-    member_ids: List[str] = []
-    bill_ids: List[str] = []
+    id: Optional[PyObjectId] = Field(alias="_id", default=None)
+    name: str = Field(min_length=5, max_length=30)
+    description: Optional[str] = Field(max_length=100, default="")
+    owner_id: Optional[PyObjectId] = Field(alias="owner_id", default=None)
+    member_ids: List[str] = Field(default_factory=list)
+    bill_ids: Optional[List[str]] = Field(default_factory=list)
 
 
 class InitialPayer(BaseModel):
