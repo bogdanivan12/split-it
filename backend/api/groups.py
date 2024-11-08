@@ -1,18 +1,16 @@
 # backend/api/groups.py
 from fastapi import APIRouter, HTTPException
 from starlette import status
-from bson import ObjectId
 
-from backend.api.api_request_classes import CreateGroupRequest
 from backend.common import config_info
-from backend.common.models import Group
+from backend.common import models
 
 router = APIRouter(prefix="/api/v1/groups", tags=["groups"])
 db = config_info.get_db()
 
 
 @router.post("/create_group", status_code=status.HTTP_201_CREATED)
-async def create_group(request: CreateGroupRequest):
+async def create_group(request: models.Group):
     group_dict = request.model_dump(by_alias=True)
 
     if db["groups"].find_one({"name": group_dict["name"]}):
