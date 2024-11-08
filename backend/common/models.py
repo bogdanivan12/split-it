@@ -9,7 +9,7 @@ PyObjectId = Annotated[str, BeforeValidator(str)]
 
 class User(BaseModel):
     id: Optional[PyObjectId] = Field(alias="_id", default=None)
-    username: PyObjectId = Field(min_length=5, max_length=20)
+    username: str = Field(min_length=5, max_length=20)
     email: EmailStr = Field(min_length=5, max_length=50)
     full_name: Optional[str] = Field(max_length=50, default="")
     phone_number: Optional[str] = Field(min_length=9, max_length=15,
@@ -105,3 +105,8 @@ class Request(BaseModel):
     date: datetime
     type: RequestType
     status: RequestStatus = RequestStatus.PENDING
+
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str = "Bearer"
