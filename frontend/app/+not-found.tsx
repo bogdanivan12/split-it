@@ -1,11 +1,8 @@
 import { Link, router, Stack, useGlobalSearchParams } from 'expo-router';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, View, Text } from 'react-native';
 
-import { Text, View } from '@/components/Themed';
 
 export default function NotFoundScreen() {
-  const l = useGlobalSearchParams()
-  console.log(JSON.stringify(l))
   return (
     <>
       <Stack.Screen options={{ title: 'Oops!' }} />
