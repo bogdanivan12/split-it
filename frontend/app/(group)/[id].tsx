@@ -7,7 +7,7 @@ export default function GroupId() {
   return (
     <Redirect
       href={{
-        pathname: "/(acctabs)",
+        pathname: "/(bill)",
         params: {
           id: id,
         },

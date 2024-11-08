@@ -4,4 +4,4 @@ A mobile application for splitting bills and managing payments among multiple gr
 ## Used technologies
   - Database: MongoDB
   - Server-side: Python + FastAPI
-  - Client-side: JavaScript + React Native
+  - Client-side: TypeScript + React Native

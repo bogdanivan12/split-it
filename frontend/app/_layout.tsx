@@ -46,7 +46,7 @@ function RootLayoutNav() {
       <Stack.Screen name="index" options={{ headerShown: false }} redirect />
       <Stack.Screen name="(intro)" options={{ headerShown: false }} />
       <Stack.Screen name="(account)" options={{ headerShown: false }} />
-      <Stack.Screen name="(acctabs)" options={{ headerShown: false }} />
+      <Stack.Screen name="(bill)" options={{ headerShown: false }} />
       <Stack.Screen
         name="(group)/[id]"
         options={(o) => {
