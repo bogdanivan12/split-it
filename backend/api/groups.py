@@ -9,7 +9,7 @@ router = APIRouter(prefix="/api/v1/groups", tags=["groups"])
 db = config_info.get_db()
 
 
-@router.post("/create_group", status_code=status.HTTP_201_CREATED)
+@router.post("/", status_code=status.HTTP_201_CREATED)
 async def create_group(request: models.Group):
     group_dict = request.model_dump(by_alias=True)
 
@@ -24,4 +24,8 @@ async def create_group(request: models.Group):
     if group_dict.get("_id") is None:
         group_dict.pop("_id", None)
 
-    db["groups"].insert_one(group_dict)
+    try:
+        db["groups"].insert_one(group_dict)
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_424_FAILED_DEPENDENCY,
+                            detail=str(e))
