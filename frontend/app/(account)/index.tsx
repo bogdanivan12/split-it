@@ -11,6 +11,7 @@ import {
   ScrollView,
   Animated,
   Easing,
+  Alert,
 } from "react-native";
 import React, { useEffect, useState } from "react";
 import { User } from "@/types/User.types";
@@ -125,6 +126,26 @@ export default function Profile() {
     router.replace("/(intro)");
   };
 
+  const deleteAccount = () => {
+    router.replace("/(intro)");
+  };
+
+  const deleteAccountClick = () => {
+    if (actionsBlocked) return;
+    Alert.alert(
+      "Delete account",
+      "Are you sure you want to delete your account? You will be removed from all groups.",
+      [
+        {
+          text: "Cancel",
+          onPress: () => {},
+          style: "cancel",
+        },
+        { text: "YES, DELETE MY ACCOUNT", onPress: () => deleteAccount() },
+      ]
+    );
+  };
+
   const flip = scaleAnim.interpolate({
     inputRange: [0, 1],
     outputRange: [0, 1],
@@ -147,7 +168,11 @@ export default function Profile() {
             <Text style={styles.title}>Profile</Text>
             {!isEditing && (
               <TouchableOpacity onPress={handleEditToggle}>
-                <FontAwesome name="pencil" size={24} color={Colors.theme1.text2} />
+                <FontAwesome
+                  name="pencil"
+                  size={24}
+                  color={Colors.theme1.text2}
+                />
               </TouchableOpacity>
             )}
           </View>
@@ -227,6 +252,17 @@ export default function Profile() {
         <TouchableOpacity style={styles.logoutButton} onPress={logout}>
           <Text style={{ ...styles.buttonText, color: Colors.theme1.text3 }}>
             Logout
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.logoutButton} onPress={deleteAccount}>
+          <Text
+            style={{
+              ...styles.buttonText,
+              fontFamily: "AlegreyaBold",
+              color: Colors.theme1.text3,
+            }}
+          >
+            Delete Account
           </Text>
         </TouchableOpacity>
       </KeyboardAvoidingView>
