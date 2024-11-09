@@ -64,14 +64,15 @@ async def get_group(
         user (models.User): The authenticated user.
     ```
     """
-    group = db["groups"].find_one({"_id": group_id})
-    if not group:
+    group_dict = db["groups"].find_one({"_id": group_id})
+    if not group_dict:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail="Group not found")
-    if user["_id"] not in group["member_ids"]:
+    group = models.Group(**group_dict)
+    if user.id not in group.member_ids:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
                             detail="User is not a member of the group")
-    return models.Group(**group)
+    return group
 
 
 @router.get("/", status_code=status.HTTP_200_OK,
@@ -86,5 +87,5 @@ async def get_groups(
     groups = db["groups"].find()
     group_objects = [models.Group(**group)
                      for group in groups
-                     if user["_id"] in group["member_ids"]]
+                     if user.id in group["member_ids"]]
     return group_objects
