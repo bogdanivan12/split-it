@@ -60,7 +60,7 @@ def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                             detail="User not found")
-    return user
+    return models.User(**user)
 
 
 @router.post("/token", status_code=status.HTTP_200_OK,
