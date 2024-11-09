@@ -1,3 +1,4 @@
+from beanie import PydanticObjectId
 from fastapi import HTTPException, APIRouter, Form, Depends
 from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import EmailStr
@@ -12,10 +13,11 @@ router = APIRouter(prefix="/api/v1/users", tags=["users"])
 db = config_info.get_db()
 
 
-@router.post("/", status_code=status.HTTP_201_CREATED)
+@router.post("/", status_code=status.HTTP_201_CREATED,
+             response_model=models.User)
 async def register(
-    form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
-    email: EmailStr = Form(min_length=5, max_length=50)
+        form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
+        email: EmailStr = Form(min_length=5, max_length=50)
 ):
     """
     # Register a new user
@@ -39,7 +41,12 @@ async def register(
                             detail="Email already exists")
 
     try:
-        db["users"].insert_one(user_dict)
+        db_result = db["users"].insert_one(user_dict)
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_424_FAILED_DEPENDENCY,
                             detail=str(e))
+
+    user_dict.pop("hashed_password", None)
+    user = models.User(**user_dict)
+    user.id = PydanticObjectId(db_result.inserted_id)
+    return user

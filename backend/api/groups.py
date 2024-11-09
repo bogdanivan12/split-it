@@ -1,11 +1,10 @@
-# backend/api/groups.py
-from typing import Annotated, List
-
 from beanie import PydanticObjectId
 from fastapi import APIRouter, HTTPException, Depends
 from starlette import status
+from typing import Annotated, List
 
 from backend.api import auth
+from backend.api import api_request_classes as api_req
 from backend.common import config_info
 from backend.common import models
 
@@ -13,40 +12,38 @@ router = APIRouter(prefix="/api/v1/groups", tags=["groups"])
 db = config_info.get_db()
 
 
-@router.post("/", status_code=status.HTTP_201_CREATED)
-async def create_group(request: models.Group):
+@router.post("/", status_code=status.HTTP_201_CREATED,
+             response_model=models.Group)
+async def create_group(
+        request: api_req.CreateGroupRequest,
+        user: Annotated[models.User, Depends(auth.get_current_user)]
+):
     """
     # Create a new group
     Creates a new group in the database.
     ```
     Args:
-        request.id (str): The id of the group.
         request.name (str): The name of the group.
-        request.owner_id (str): The id of the group owner.
-        request.member_ids (List[str]): The ids of the group members.
         request.description (str): The description of the group.
-        request.bill_ids (List[str]): The ids of the bills associated with
-                                      the group.
     ```
     """
-    group_dict = request.model_dump(by_alias=True)
-
-    if db["groups"].find_one({"name": group_dict["name"]}):
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT,
-                            detail="Group name already exists")
-    if not db["users"].find_one({"_id": group_dict["owner_id"]}):
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                            detail="User not found")
-    if group_dict["owner_id"] not in group_dict["member_ids"]:
-        group_dict["member_ids"].append(group_dict["owner_id"])
-    if group_dict.get("_id") is None:
-        group_dict.pop("_id", None)
+    group = models.Group(
+        name=request.name,
+        description=request.description,
+        owner_id=user.id,
+        member_ids=[user.id]
+    )
+    group_dict = group.model_dump(by_alias=True)
+    group_dict.pop("_id", None)
 
     try:
-        db["groups"].insert_one(group_dict)
+        db_result = db["groups"].insert_one(group_dict)
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_424_FAILED_DEPENDENCY,
                             detail=str(e))
+
+    group.id = PydanticObjectId(db_result.inserted_id)
+    return group
 
 
 @router.get("/{group_id}", status_code=status.HTTP_200_OK,
