@@ -1,42 +1,12 @@
-from bson import ObjectId
+from beanie import PydanticObjectId
 from datetime import datetime
 from enum import Enum
-from pydantic import (BaseModel, Field, EmailStr, GetCoreSchemaHandler,
-                      GetJsonSchemaHandler)
-from pydantic_core import core_schema
-from typing import List, Optional, Any
-
-
-class PyObjectId(ObjectId):
-    @classmethod
-    def __get_pydantic_core_schema__(cls, source_type: Any,
-                                     handler: GetCoreSchemaHandler):
-        return core_schema.no_info_plain_validator_function(cls.validate)
-
-    @classmethod
-    def validate(cls, value: Any) -> ObjectId:
-        if isinstance(value, ObjectId):
-            return value
-        if isinstance(value, str) and ObjectId.is_valid(value):
-            return ObjectId(value)
-        raise ValueError(f"Invalid ObjectId: {value}")
-
-    @classmethod
-    def __get_pydantic_json_schema__(cls, core_schema,
-                                     handler: GetJsonSchemaHandler):
-        json_schema = handler(core_schema)
-        json_schema.update(type="string")
-        return json_schema
-
-    def __repr__(self):
-        return f"PyObjectId({super().__str__()})"
-
-    def __str__(self):
-        return super().__str__()
+from pydantic import BaseModel, Field, EmailStr
+from typing import List, Optional
 
 
 class User(BaseModel):
-    id: Optional[PyObjectId] = Field(alias="_id", default=None)
+    id: Optional[PydanticObjectId] = Field(alias="_id", default=None)
     username: str = Field(min_length=5, max_length=20)
     email: EmailStr = Field(min_length=5, max_length=50)
     full_name: Optional[str] = Field(max_length=50, default="")
@@ -46,28 +16,18 @@ class User(BaseModel):
                                       default=None)
     group_ids: List[str] = Field(default_factory=list)
 
-    class Config:
-        populate_by_name = True
-        arbitrary_types_allowed = True
-        json_encoders = {ObjectId: str}
-
 
 class UserInDB(User):
     hashed_password: str
 
 
 class Group(BaseModel):
-    id: Optional[PyObjectId] = Field(alias="_id", default=None)
+    id: Optional[PydanticObjectId] = Field(alias="_id", default=None)
     name: str = Field(min_length=5, max_length=30)
     description: Optional[str] = Field(max_length=100, default="")
-    owner_id: Optional[PyObjectId] = Field(alias="owner_id", default=None)
+    owner_id: Optional[PydanticObjectId] = Field(alias="owner_id", default=None)
     member_ids: List[str] = Field(default_factory=list)
     bill_ids: Optional[List[str]] = Field(default_factory=list)
-
-    class Config:
-        populate_by_name = True
-        arbitrary_types_allowed = True
-        json_encoders = {ObjectId: str}
 
 
 class InitialPayer(BaseModel):
