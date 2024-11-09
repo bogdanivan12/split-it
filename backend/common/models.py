@@ -1,10 +1,30 @@
-from pydantic import BaseModel, Field, EmailStr, BeforeValidator
-from typing import List, Optional, Annotated
+from bson import ObjectId
 from datetime import datetime
 from enum import Enum
+from pydantic import (BaseModel, Field, EmailStr, GetCoreSchemaHandler,
+                      GetJsonSchemaHandler)
+from pydantic_core import core_schema
+from typing import List, Optional, Any
 
 
-PyObjectId = Annotated[str, BeforeValidator(str)]
+class PyObjectId:
+    @classmethod
+    def __get_pydantic_core_schema__(cls, source_type: Any,
+                                     handler: GetCoreSchemaHandler):
+        return core_schema.no_info_plain_validator_function(cls.validate)
+
+    @classmethod
+    def validate(cls, value: Any) -> ObjectId:
+        if isinstance(value, ObjectId):
+            return value
+        if isinstance(value, str) and ObjectId.is_valid(value):
+            return ObjectId(value)
+        raise ValueError(f"Invalid ObjectId: {value}")
+
+    @classmethod
+    def __get_pydantic_json_schema__(cls, core_schema,
+                                     handler: GetJsonSchemaHandler):
+        return {'type': 'string'}
 
 
 class User(BaseModel):
