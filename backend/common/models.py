@@ -7,7 +7,7 @@ from pydantic_core import core_schema
 from typing import List, Optional, Any
 
 
-class PyObjectId:
+class PyObjectId(ObjectId):
     @classmethod
     def __get_pydantic_core_schema__(cls, source_type: Any,
                                      handler: GetCoreSchemaHandler):
@@ -24,7 +24,15 @@ class PyObjectId:
     @classmethod
     def __get_pydantic_json_schema__(cls, core_schema,
                                      handler: GetJsonSchemaHandler):
-        return {'type': 'string'}
+        json_schema = handler(core_schema)
+        json_schema.update(type="string")
+        return json_schema
+
+    def __repr__(self):
+        return f"PyObjectId({super().__str__()})"
+
+    def __str__(self):
+        return super().__str__()
 
 
 class User(BaseModel):
