@@ -48,6 +48,8 @@ class User(BaseModel):
 
     class Config:
         populate_by_name = True
+        arbitrary_types_allowed = True
+        json_encoders = {ObjectId: str}
 
 
 class UserInDB(User):
@@ -61,6 +63,11 @@ class Group(BaseModel):
     owner_id: Optional[PyObjectId] = Field(alias="owner_id", default=None)
     member_ids: List[str] = Field(default_factory=list)
     bill_ids: Optional[List[str]] = Field(default_factory=list)
+
+    class Config:
+        populate_by_name = True
+        arbitrary_types_allowed = True
+        json_encoders = {ObjectId: str}
 
 
 class InitialPayer(BaseModel):
