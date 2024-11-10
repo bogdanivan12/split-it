@@ -100,13 +100,16 @@ class RequestType(Enum):
 
 
 class Request(BaseModel):
-    id: str
-    group_id: str
-    sender_id: str
-    recipient_id: str
-    date: datetime
-    type: RequestType
-    status: RequestStatus = RequestStatus.PENDING
+    id: Optional[PydanticObjectId] = Field(alias="_id", default=None)
+    group_id: PydanticObjectId
+    sender_id: PydanticObjectId
+    recipient_id: PydanticObjectId
+    date: datetime = Field(default_factory=datetime.now)
+    type: RequestType = RequestType.JOIN_GROUP.value
+    status: RequestStatus = RequestStatus.PENDING.value
+
+    class Config:
+        json_encoders = {PydanticObjectId: str}
 
 
 class Token(BaseModel):
