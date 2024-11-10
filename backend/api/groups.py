@@ -20,6 +20,13 @@ def generate_join_code(length: int = 6) -> str:
     return "".join(secrets.choice(characters) for _ in range(length))
 
 
+def generate_unique_join_code(length: int = 6) -> str:
+    while True:
+        join_code = generate_join_code(length)
+        if not db["groups"].find_one({"join_code": join_code}):
+            return join_code
+
+
 @router.post("/", status_code=status.HTTP_201_CREATED,
              response_model=models.Group)
 async def create_group(
@@ -35,7 +42,7 @@ async def create_group(
         request.description (str): The description of the group.
     ```
     """
-    join_code = generate_join_code()
+    join_code = generate_unique_join_code()
     group = models.Group(
         name=request.name,
         description=request.description,
