@@ -254,7 +254,7 @@ export default function Profile() {
             Logout
           </Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.logoutButton} onPress={deleteAccount}>
+        <TouchableOpacity style={styles.logoutButton} onPress={deleteAccountClick}>
           <Text
             style={{
               ...styles.buttonText,
@@ -320,6 +320,7 @@ const styles = StyleSheet.create({
   },
   input: {
     ...generalStyles.input,
+    width: "99%"
   },
   saveButton: {
     backgroundColor: Colors.theme1.button2,
