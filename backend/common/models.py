@@ -31,6 +31,7 @@ class Group(BaseModel):
     owner_id: Optional[PydanticObjectId] = Field(default=None)
     member_ids: List[PydanticObjectId] = Field(default_factory=list)
     bill_ids: Optional[List[PydanticObjectId]] = Field(default_factory=list)
+    join_code: Optional[str] = Field(min_length=5, max_length=20, default=None)
 
     class Config:
         json_encoders = {PydanticObjectId: str}
