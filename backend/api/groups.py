@@ -110,18 +110,13 @@ async def update_group(
     if not group_dict:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail="Group not found")
-    group = models.Group(**group_dict)
-    if user.id != group.owner_id:
+    if user.id != group_dict["owner_id"]:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
                             detail="You are not the owner of the group")
 
-    update_data = {k: v for k, v in request.dict(exclude_unset=True).items()
-                   if v is not None}
+    update_data = request.model_dump(exclude_unset=True)
+    group_dict.update(update_data)
 
-    for key, value in update_data.items():
-        setattr(group, key, value)
-
-    group_dict = group.model_dump(by_alias=True)
     group_dict.pop("_id", None)
 
     try:
@@ -130,4 +125,8 @@ async def update_group(
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_424_FAILED_DEPENDENCY,
                             detail=str(e))
+
+    group = models.Group(**group_dict)
+    group.id = group_id
+
     return group
