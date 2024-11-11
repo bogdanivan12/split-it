@@ -92,7 +92,7 @@ async def get_groups(
             response_model=models.Group)
 async def update_group(
         group_id: PydanticObjectId,
-        request: models.Group,
+        request: api_req.UpdateGroupRequest,
         user: Annotated[models.User, Depends(auth.get_current_user)]
 ):
     """
@@ -101,7 +101,8 @@ async def update_group(
     ```
     Args:
         group_id (str): The id of the group to update.
-        request (models.Group): The updated group information.
+        request (api_req.UpdateGroupRequest): The request body with the updated
+                                            group information.
         user (models.User): The authenticated user.
     ```
     """
@@ -112,24 +113,21 @@ async def update_group(
     group = models.Group(**group_dict)
     if user.id != group.owner_id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
-                            detail="User is not the owner of the group")
+                            detail="You are not the owner of the group")
 
-    if request.name:
-        group.name = request.name
+    update_data = {k: v for k, v in request.dict(exclude_unset=True).items()
+                   if v is not None}
 
-    if request.description:
-        group.description = request.description
-
-    if request.owner_id:
-        group.owner_id = request.owner_id
-
-    if request.member_ids:
-        for member_id in request.member_ids:
-            if member_id not in group.member_ids:
-                group.member_ids.append(member_id)
+    for key, value in update_data.items():
+        setattr(group, key, value)
 
     group_dict = group.model_dump(by_alias=True)
     group_dict.pop("_id", None)
 
-    db["groups"].update_one({"_id": group_id}, {"$set": group_dict})
+    try:
+        db["groups"].update_one({"_id": group_id},
+                                {"$set": group_dict})
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_424_FAILED_DEPENDENCY,
+                            detail=str(e))
     return group
