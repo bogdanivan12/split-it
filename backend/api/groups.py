@@ -15,12 +15,12 @@ router = APIRouter(prefix="/api/v1/groups", tags=["groups"])
 db = config_info.get_db()
 
 
-def generate_join_code(length: int = 6) -> str:
+def generate_join_code(length: int) -> str:
     characters = string.ascii_uppercase + string.digits
     return "".join(secrets.choice(characters) for _ in range(length))
 
 
-def generate_unique_join_code(length: int = 6) -> str:
+def generate_unique_join_code(length: int) -> str:
     while True:
         join_code = generate_join_code(length)
         if not db["groups"].find_one({"join_code": join_code}):
@@ -42,7 +42,7 @@ async def create_group(
         request.description (str): The description of the group.
     ```
     """
-    join_code = generate_unique_join_code()
+    join_code = generate_unique_join_code(config_info.JOIN_CODE_LENGTH)
     group = models.Group(
         name=request.name,
         description=request.description,
