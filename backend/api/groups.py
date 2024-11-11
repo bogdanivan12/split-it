@@ -105,18 +105,18 @@ async def get_groups(
     return group_objects
 
 
-@router.post("/join", status_code=status.HTTP_200_OK)
+@router.post("/join/{join_code}", status_code=status.HTTP_201_CREATED)
 async def join_group(
-        request: api_req.JoinGroupRequest,
+        join_code: str,
         user: Annotated[models.User, Depends(auth.get_current_user)]
 ):
     """
     # Join a group using a join code
     Validates the join code and creates a join request.
     """
-    group_dict = db["groups"].find_one({"join_code": request.join_code})
+    group_dict = db["groups"].find_one({"join_code": join_code})
     if not group_dict:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail="Invalid join code")
 
     group = models.Group(**group_dict)
@@ -133,5 +133,3 @@ async def join_group(
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_424_FAILED_DEPENDENCY,
                             detail=str(e))
-
-    return {"message": "Join request sent successfully"}

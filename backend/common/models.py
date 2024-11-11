@@ -31,7 +31,7 @@ class Group(BaseModel):
     owner_id: Optional[PydanticObjectId] = Field(default=None)
     member_ids: List[PydanticObjectId] = Field(default_factory=list)
     bill_ids: Optional[List[PydanticObjectId]] = Field(default_factory=list)
-    join_code: Optional[str] = Field(min_length=5, max_length=20, default=None)
+    join_code: Optional[str] = Field(min_length=4, max_length=20, default=None)
 
     class Config:
         json_encoders = {PydanticObjectId: str}
@@ -104,7 +104,7 @@ class Request(BaseModel):
     group_id: PydanticObjectId
     sender_id: PydanticObjectId
     recipient_id: PydanticObjectId
-    date: datetime = Field(default_factory=datetime.now)
+    date: datetime = datetime.now()
     type: RequestType = RequestType.JOIN_GROUP.value
     status: RequestStatus = RequestStatus.PENDING.value
 
