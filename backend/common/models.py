@@ -88,13 +88,13 @@ class Payment(BaseModel):
     status: PaymentStatus = PaymentStatus.NOT_STARTED
 
 
-class RequestStatus(Enum):
+class RequestStatus(str, Enum):
     PENDING = "PENDING"
     ACCEPTED = "ACCEPTED"
     DECLINED = "DECLINED"
 
 
-class RequestType(Enum):
+class RequestType(str, Enum):
     JOIN_GROUP = "JOIN_GROUP"
     JOIN_MINIGAME = "JOIN_MINIGAME"
 
@@ -105,8 +105,8 @@ class Request(BaseModel):
     sender_id: PydanticObjectId
     recipient_id: PydanticObjectId
     date: datetime = datetime.now()
-    type: RequestType = RequestType.JOIN_GROUP.value
-    status: RequestStatus = RequestStatus.PENDING.value
+    type: RequestType = RequestType.JOIN_GROUP
+    status: RequestStatus = RequestStatus.PENDING
 
     class Config:
         json_encoders = {PydanticObjectId: str}
