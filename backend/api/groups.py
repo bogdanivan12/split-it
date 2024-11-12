@@ -103,3 +103,47 @@ async def get_groups(
                      for group in groups
                      if user.id in group["member_ids"]]
     return group_objects
+
+
+@router.put("/{group_id}", status_code=status.HTTP_200_OK,
+            response_model=models.Group)
+async def update_group(
+        group_id: PydanticObjectId,
+        request: api_req.UpdateGroupRequest,
+        user: Annotated[models.User, Depends(auth.get_current_user)]
+):
+    """
+    # Update group by id
+    Updates a group by its id in the database.
+    ```
+    Args:
+        group_id (str): The id of the group to update.
+        request (api_req.UpdateGroupRequest): The request body with the updated
+                                            group information.
+        user (models.User): The authenticated user.
+    ```
+    """
+    group_dict = db["groups"].find_one({"_id": group_id})
+    if not group_dict:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail="Group not found")
+    if user.id != group_dict["owner_id"]:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
+                            detail="You are not the owner of the group")
+
+    update_data = request.model_dump(exclude_unset=True)
+    group_dict.update(update_data)
+
+    group_dict.pop("_id", None)
+
+    try:
+        db["groups"].update_one({"_id": group_id},
+                                {"$set": group_dict})
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_424_FAILED_DEPENDENCY,
+                            detail=str(e))
+
+    group = models.Group(**group_dict)
+    group.id = group_id
+
+    return group
