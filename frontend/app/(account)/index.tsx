@@ -171,7 +171,7 @@ export default function Profile() {
                 <FontAwesome
                   name="pencil"
                   size={24}
-                  color={Colors.theme1.text2}
+                  color={Colors.black}
                 />
               </TouchableOpacity>
             )}
@@ -250,7 +250,7 @@ export default function Profile() {
           </ScrollView>
         </Animated.View>
         <TouchableOpacity style={styles.logoutButton} onPress={logout}>
-          <Text style={{ ...styles.buttonText, color: Colors.theme1.text3 }}>
+          <Text style={{ ...styles.buttonText, color: Colors.theme1.text2 }}>
             Logout
           </Text>
         </TouchableOpacity>
@@ -259,7 +259,7 @@ export default function Profile() {
             style={{
               ...styles.buttonText,
               fontFamily: "AlegreyaBold",
-              color: Colors.theme1.text3,
+              color: Colors.theme1.text2,
             }}
           >
             Delete Account
@@ -348,7 +348,7 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     fontFamily: "AlegreyaRegular",
-    color: Colors.theme1.text2,
+    color: Colors.black,
     fontSize: 16,
     fontWeight: "bold",
   },
