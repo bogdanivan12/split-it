@@ -90,7 +90,7 @@ const Groups: React.FC = () => {
                 <FontAwesome
                   name="plus-square"
                   size={20}
-                  color={Colors.white}
+                  color={Colors.theme1.text2}
                 />
                 <Text style={styles.addButtonText}>Add Group</Text>
               </View>
@@ -182,7 +182,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
     fontFamily: "AlegreyaBold",
     textAlign: "center",
-    color: Colors.theme1.text2,
+    color: Colors.black,
   },
   groupList: {
     flexGrow: 0,
@@ -198,7 +198,7 @@ const styles = StyleSheet.create({
     borderRadius: 5,
   },
   text: {
-    color: Colors.theme1.text2,
+    color: Colors.black,
     fontFamily: "AlegreyaBold",
     textAlign: "center",
     fontSize: 16,
@@ -232,6 +232,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.theme1.background1,
     padding: 20,
     elevation: 5,
+    borderRadius: 20
   },
   modalContent: {
     alignItems: "center",
@@ -274,7 +275,7 @@ const styles = StyleSheet.create({
     marginLeft: 5,
   },
   modalButtonText: {
-    color: "white",
+    color: Colors.theme1.text,
     fontFamily: "AlegreyaBold",
     fontWeight: "bold",
     fontSize: 16,
