@@ -14,6 +14,7 @@ export const Colors = {
     secondaryText: "#95A5A6",
     background1: "#D0F0C0",
     background2: "#64755b",
+    background3: "#198539",
     tint: "#1ABC9C",
     tabBackgroundNormal: "#111c20",
     tabBackgroundSelected: "#111c20",
@@ -27,4 +28,6 @@ export const Colors = {
     button2: "#31b320",
     button3: "#742f2f",
   },
+  white: 'white',
+  black: 'black',
 };
