@@ -16,14 +16,14 @@ export default function Layout() {
         name="login"
         options={{
           title: "Login",
-          tabBarIcon: ({ color }) => <Entypo size={28} style={{ marginBottom: -3 }} name="lock-open" color={color} />
+          tabBarIcon: ({ color }) => <FontAwesome size={36} style={{ marginBottom: -3 }} name="sign-in" color={color} />
         }}
       />
       <Tabs.Screen
         name="register"
         options={{
           title: "Register",
-          tabBarIcon: ({ color }) => <FontAwesome size={28} style={{ marginBottom: -3 }} name="sign-in" color={color} />
+          tabBarIcon: ({ color }) => <Entypo size={36} style={{ marginBottom: -3 }} name="lock-open" color={color} />
         }}
       />
     </StyledTabs>

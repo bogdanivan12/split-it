@@ -17,6 +17,7 @@ export default function RootLayout() {
   const [loaded, error] = useFonts({
     SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
     AlegreyaBold: require("../assets/fonts/Alegreya/Alegreya-Bold.ttf"),
+    AlegreyaItalic: require("../assets/fonts/Alegreya/Alegreya-MediumItalic.ttf"),
     Alegreya: require("../assets/fonts/Alegreya/Alegreya-Black.ttf"),
     AlegreyaMedium: require("../assets/fonts/Alegreya/Alegreya-Medium.ttf"),
     AlegreyaRegular: require("../assets/fonts/Alegreya/Alegreya-Regular.ttf"),
@@ -47,6 +48,7 @@ function RootLayoutNav() {
       <Stack.Screen name="(intro)" options={{ headerShown: false }} />
       <Stack.Screen name="(account)" options={{ headerShown: false }} />
       <Stack.Screen name="(group)" options={{ headerShown: false }} />
-      </Stack>
+      <Stack.Screen name="(bills)" options={{ headerShown: false }} />
+    </Stack>
   );
 }

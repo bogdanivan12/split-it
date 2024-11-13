@@ -9,6 +9,7 @@ export const Colors = {
   },
   theme1: {
     text: "#001524",
+    text3: "#153a53",
     text2: "#cdebf8",
     secondaryText: "#95A5A6",
     background1: "#FDE5D4",
