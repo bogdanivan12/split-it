@@ -64,7 +64,7 @@ const Groups: React.FC = () => {
         <ScrollView contentContainerStyle={generalStyles.scrollContainer}>
           <View onStartShouldSetResponder={() => true} style={styles.container}>
             <View style={styles.absoluteFill} />
-            <Text style={styles.header}>Groups</Text>
+            <Text style={styles.header}>Which group are you tricking today?</Text>
             <FlatList
               data={groups}
               scrollEnabled={false}

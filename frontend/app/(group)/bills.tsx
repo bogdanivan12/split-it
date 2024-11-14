@@ -1,23 +1,98 @@
-import { View, Text, StyleSheet } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  TouchableOpacity,
+} from "react-native";
 import React from "react";
-import { useLocalSearchParams } from "expo-router";
+import { Link } from "expo-router";
+import { Colors } from "@/constants/Theme";
+import { Bill } from "@/types/Bill.types";
 
-export default function Bills() {
-  const { id } = useLocalSearchParams();
+const billsData: Bill[] = [
+  { id: "1", name: "Electricity", amount: "$120", dateCreated: "2023-12-01" },
+  { id: "2", name: "Water", amount: "$45", dateCreated: "2023-12-05" },
+  { id: "3", name: "Internet", amount: "$80", dateCreated: "2023-12-10" },
+];
+
+const Bills: React.FC = () => {
   return (
     <View style={styles.container}>
-      <Text style={styles.text}>Bills {id}</Text>
+      <Text style={styles.header}>What has been paid?</Text>
+      <Text style={styles.subHeader}>Navigate through the bills that are split in this group.</Text>
+
+      <FlatList
+        data={billsData}
+        contentContainerStyle={styles.billsContainer}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <Link
+            asChild
+            href={{
+              pathname: `/(bills)`,
+              params: { id: item.id },
+            }}
+          >
+            <TouchableOpacity style={styles.billContainer}>
+              <Text style={styles.billName}>{item.name}</Text>
+              <Text style={styles.billDetails}>{item.amount} - Created on: {item.dateCreated}</Text>
+            </TouchableOpacity>
+          </Link>
+        )}
+        style={styles.billList}
+      />
     </View>
   );
-}
+};
+
+export default Bills;
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
+    padding: 20,
+    backgroundColor: Colors.theme1.background2,
   },
-  text: {
-    color: 'white'
+  header: {
+    fontSize: 24,
+    fontWeight: "bold",
+    fontFamily: "AlegreyaMedium",
+    marginBottom: 10,
+    color: Colors.theme1.text,
+  },
+  subHeader: {
+    fontSize: 14,
+    fontFamily: "AlegreyaMedium",
+    marginBottom: 20,
+    color: Colors.theme1.text3,
+  },
+  billsContainer: {
+    flexDirection: 'column',
+  },
+  billContainer: {
+    backgroundColor: Colors.theme1.button,
+    padding: 15,
+    borderRadius: 8,
+    marginBottom: 10,
+    shadowOffset: { width: 1, height: 1 },
+    shadowOpacity: 0.4,
+    shadowRadius: 2,
+    width: '95%',
+    alignSelf: 'center'
+  },
+  billName: {
+    fontSize: 18,
+    fontFamily: "AlegreyaMedium",
+    fontWeight: "bold",
+    color: Colors.black,
+  },
+  billDetails: {
+    fontSize: 14,
+    fontFamily: "AlegreyaMedium",
+    color: Colors.theme1.text,
+  },
+  billList: {
+    marginTop: 10,
   },
 });
