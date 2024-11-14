@@ -168,11 +168,7 @@ export default function Profile() {
             <Text style={styles.title}>Profile</Text>
             {!isEditing && (
               <TouchableOpacity onPress={handleEditToggle}>
-                <FontAwesome
-                  name="pencil"
-                  size={24}
-                  color={Colors.black}
-                />
+                <FontAwesome name="pencil" size={24} color={Colors.black} />
               </TouchableOpacity>
             )}
           </View>
@@ -233,13 +229,16 @@ export default function Profile() {
               {isEditing && (
                 <View style={styles.buttonsContainer}>
                   <TouchableOpacity
-                    style={styles.backButton}
+                    style={{
+                      ...styles.editButton,
+                      backgroundColor: Colors.theme1.button2,
+                    }}
                     onPress={cancelEdit}
                   >
                     <Text style={styles.buttonText}>Back</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
-                    style={styles.saveButton}
+                    style={styles.editButton}
                     onPress={handleSave}
                   >
                     <Text style={styles.buttonText}>Save</Text>
@@ -254,7 +253,10 @@ export default function Profile() {
             Logout
           </Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.logoutButton} onPress={deleteAccountClick}>
+        <TouchableOpacity
+          style={styles.logoutButton}
+          onPress={deleteAccountClick}
+        >
           <Text
             style={{
               ...styles.buttonText,
@@ -320,17 +322,9 @@ const styles = StyleSheet.create({
   },
   input: {
     ...generalStyles.input,
-    width: "99%"
+    width: "99%",
   },
-  saveButton: {
-    backgroundColor: Colors.theme1.button2,
-    padding: 12,
-    borderRadius: 5,
-    alignItems: "center",
-    marginTop: 20,
-    width: "40%",
-  },
-  backButton: {
+  editButton: {
     backgroundColor: Colors.theme1.button,
     padding: 12,
     borderRadius: 5,
