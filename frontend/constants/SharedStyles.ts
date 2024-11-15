@@ -45,6 +45,7 @@ export const signUpStyles = StyleSheet.create({
     shadowRadius: 5,
     elevation: 5,
     maxHeight: "60%",
+    marginBottom: 100
   },
   headerText: {
     fontFamily: "AlegreyaBold",

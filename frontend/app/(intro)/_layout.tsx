@@ -16,7 +16,8 @@ export default function Layout() {
         name="login"
         options={{
           title: "Login",
-          tabBarIcon: ({ color }) => <FontAwesome size={36} style={{ marginBottom: -3 }} name="sign-in" color={color} />
+          tabBarIcon: ({ color }) => <FontAwesome size={36} style={{ marginBottom: -3 }} name="sign-in" color={color} />,
+          
         }}
       />
       <Tabs.Screen
