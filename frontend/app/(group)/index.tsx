@@ -40,7 +40,10 @@ const Group: React.FC = () => {
       <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
         <View>
           <Text style={styles.sectionHeader}>Group Master</Text>
-          <View key={groupDetails.owner.id} style={{...styles.memberContainer, marginLeft: 2}}>
+          <View
+            key={groupDetails.owner.id}
+            style={{ ...styles.memberContainer, marginLeft: 2 }}
+          >
             <Text style={styles.memberTextFullName}>
               {groupDetails.owner.fullName}
             </Text>
@@ -81,14 +84,14 @@ const styles = StyleSheet.create({
   description: {
     fontSize: 17,
     fontFamily: "AlegreyaMedium",
-    color: Colors.theme1.text3,
+    color: Colors.theme1.text4,
     marginBottom: 10,
   },
   sectionHeader: {
     fontSize: 24,
     fontFamily: "AlegreyaMedium",
     fontWeight: "bold",
-    color: Colors.black,
+    color: Colors.theme1.text,
     marginTop: 10,
     marginBottom: 5,
   },
@@ -118,7 +121,7 @@ const styles = StyleSheet.create({
   memberTextFullName: {
     fontFamily: "AlegreyaMedium",
     fontSize: 16,
-    color: Colors.theme1.text,
+    color: Colors.theme1.text1,
     fontStyle: "italic",
     textAlign: "center",
   },
