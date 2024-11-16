@@ -1,14 +1,14 @@
-import datetime
 import jwt
+import datetime
 
-from fastapi import APIRouter, HTTPException, Depends
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from passlib.context import CryptContext
 from typing import Annotated
 from starlette import status
+from passlib.context import CryptContext
+from fastapi import APIRouter, HTTPException, Depends
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 
-from backend.common import config_info
 from backend.common import models
+from backend.common import config_info
 
 EXPIRE_MINUTES = 30
 
@@ -35,30 +35,6 @@ def generate_token(username: str,
                 + datetime.timedelta(minutes=expire_minutes)),
     }
     return jwt.encode(payload, hash_key, algorithm="HS256")
-
-
-@router.get("/me", status_code=status.HTTP_200_OK,
-            response_model=models.User)
-def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
-    """
-    # Get current user
-    This endpoint returns the information about the authenticated user based
-    on the access token.
-    """
-    try:
-        payload = jwt.decode(token, config_info.HASH_KEY, algorithms=["HS256"])
-    except jwt.ExpiredSignatureError:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
-                            detail="Expired token")
-    except jwt.InvalidTokenError:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
-                            detail="Invalid token")
-
-    user = db["users"].find_one({"username": payload["sub"]})
-    if not user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
-                            detail="User not found")
-    return models.User(**user)
 
 
 @router.post("/token", status_code=status.HTTP_200_OK,

@@ -1,26 +1,26 @@
-import secrets
 import string
+import secrets
 
-from beanie import PydanticObjectId
-from fastapi import APIRouter, HTTPException, Depends
 from starlette import status
 from typing import Annotated, List
+from beanie import PydanticObjectId
+from fastapi import APIRouter, HTTPException, Depends
 
-from backend.api import auth
-from backend.api import api_request_classes as api_req
-from backend.common import config_info
+from backend.api import users
 from backend.common import models
+from backend.common import config_info
+from backend.api import api_request_classes as api_req
 
 router = APIRouter(prefix="/api/v1/groups", tags=["groups"])
 db = config_info.get_db()
 
 
-def generate_join_code(length: int = 6) -> str:
+def generate_join_code(length: int) -> str:
     characters = string.ascii_uppercase + string.digits
     return "".join(secrets.choice(characters) for _ in range(length))
 
 
-def generate_unique_join_code(length: int = 6) -> str:
+def generate_unique_join_code(length: int) -> str:
     while True:
         join_code = generate_join_code(length)
         if not db["groups"].find_one({"join_code": join_code}):
@@ -31,7 +31,7 @@ def generate_unique_join_code(length: int = 6) -> str:
              response_model=models.Group)
 async def create_group(
         request: api_req.CreateGroupRequest,
-        user: Annotated[models.User, Depends(auth.get_current_user)]
+        user: Annotated[models.User, Depends(users.get_current_user)]
 ):
     """
     # Create a new group
@@ -42,7 +42,7 @@ async def create_group(
         request.description (str): The description of the group.
     ```
     """
-    join_code = generate_unique_join_code()
+    join_code = generate_unique_join_code(config_info.JOIN_CODE_LENGTH)
     group = models.Group(
         name=request.name,
         description=request.description,
@@ -59,7 +59,7 @@ async def create_group(
         raise HTTPException(status_code=status.HTTP_424_FAILED_DEPENDENCY,
                             detail=str(e))
 
-    group.id = PydanticObjectId(db_result.inserted_id)
+    group.id = db_result.inserted_id
     return group
 
 
@@ -67,7 +67,7 @@ async def create_group(
             response_model=models.Group)
 async def get_group(
         group_id: PydanticObjectId,
-        user: Annotated[models.User, Depends(auth.get_current_user)]
+        user: Annotated[models.User, Depends(users.get_current_user)]
 ):
     """
     # Get group by id
@@ -78,58 +78,89 @@ async def get_group(
         user (models.User): The authenticated user.
     ```
     """
-    group_dict = db["groups"].find_one({"_id": group_id})
+    try:
+        group_dict = db["groups"].find_one({"_id": group_id})
+    except Exception as exception:
+        raise HTTPException(status_code=status.HTTP_424_FAILED_DEPENDENCY,
+                            detail=str(exception))
+
     if not group_dict:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail="Group not found")
+
     group = models.Group(**group_dict)
+
     if user.id not in group.member_ids:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
                             detail="User is not a member of the group")
+
     return group
 
 
 @router.get("/", status_code=status.HTTP_200_OK,
             response_model=List[models.Group])
 async def get_groups(
-        user: Annotated[models.User, Depends(auth.get_current_user)]
+        user: Annotated[models.User, Depends(users.get_current_user)]
 ):
     """
     # Get all groups
     Retrieves all groups from the database.
     """
-    groups = db["groups"].find()
+    try:
+        groups = db["groups"].find()
+    except Exception as exception:
+        raise HTTPException(status_code=status.HTTP_424_FAILED_DEPENDENCY,
+                            detail=str(exception))
+
     group_objects = [models.Group(**group)
                      for group in groups
                      if user.id in group["member_ids"]]
     return group_objects
 
 
-@router.post("/join/{join_code}", status_code=status.HTTP_201_CREATED)
-async def join_group(
-        join_code: str,
-        user: Annotated[models.User, Depends(auth.get_current_user)]
+@router.put("/{group_id}", status_code=status.HTTP_200_OK,
+            response_model=models.Group)
+async def update_group(
+        group_id: PydanticObjectId,
+        request: api_req.UpdateGroupRequest,
+        user: Annotated[models.User, Depends(users.get_current_user)]
 ):
     """
-    # Join a group using a join code
-    Validates the join code and creates a join request.
+    # Update group by id
+    Updates a group by its id in the database.
+    ```
+    Args:
+        group_id (str): The id of the group to update.
+        request (api_req.UpdateGroupRequest): The request body with the updated
+                                            group information.
+        user (models.User): The authenticated user.
+    ```
     """
-    group_dict = db["groups"].find_one({"join_code": join_code})
+    try:
+        group_dict = db["groups"].find_one({"_id": group_id})
+    except Exception as exception:
+        raise HTTPException(status_code=status.HTTP_424_FAILED_DEPENDENCY,
+                            detail=str(exception))
+
     if not group_dict:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                            detail="Invalid join code")
+                            detail="Group not found")
+    if user.id != group_dict["owner_id"]:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
+                            detail="You are not the owner of the group")
 
-    group = models.Group(**group_dict)
-    join_request = models.Request(
-        group_id=group.id,
-        sender_id=user.id,
-        recipient_id=group.owner_id
-    )
-    join_request_dict = join_request.model_dump(by_alias=True)
-    join_request_dict.pop("_id", None)
+    update_data = request.model_dump(exclude_unset=True)
+    group_dict.update(update_data)
+    group_dict.pop("_id", None)
 
     try:
-        db["requests"].insert_one(join_request_dict)
-    except Exception as e:
+        db["groups"].update_one({"_id": group_id},
+                                {"$set": group_dict})
+    except Exception as exception:
         raise HTTPException(status_code=status.HTTP_424_FAILED_DEPENDENCY,
-                            detail=str(e))
+                            detail=str(exception))
+
+    group = models.Group(**group_dict)
+    group.id = group_id
+
+    return group

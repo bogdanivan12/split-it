@@ -1,6 +1,6 @@
+from typing import Optional, List
 from beanie import PydanticObjectId
 from pydantic import BaseModel, Field
-from typing import Optional, List
 
 
 class CreateGroupRequest(BaseModel):
