@@ -4,8 +4,8 @@ from fastapi import FastAPI
 from starlette.responses import RedirectResponse, JSONResponse
 
 from backend.api import auth
-from backend.api import groups
 from backend.api import users
+from backend.api import groups
 
 app = FastAPI(title="SplitIt API", version="1.0.0")
 app.include_router(auth.router)
