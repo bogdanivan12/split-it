@@ -1,6 +1,5 @@
 import datetime
 import jwt
-import os
 
 from fastapi import APIRouter, HTTPException, Depends
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
@@ -11,7 +10,6 @@ from starlette import status
 from backend.common import config_info
 from backend.common import models
 
-HASH_KEY = os.getenv("HASH_KEY")
 EXPIRE_MINUTES = 30
 
 router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
@@ -48,7 +46,7 @@ def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
     on the access token.
     """
     try:
-        payload = jwt.decode(token, HASH_KEY, algorithms=["HS256"])
+        payload = jwt.decode(token, config_info.HASH_KEY, algorithms=["HS256"])
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                             detail="Expired token")
@@ -77,5 +75,5 @@ async def get_login_token(
             not verify_password(form_data.password, user["hashed_password"])):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                             detail="Incorrect username or password")
-    access_token = generate_token(form_data.username, HASH_KEY)
+    access_token = generate_token(form_data.username, config_info.HASH_KEY)
     return models.Token(access_token=access_token)
