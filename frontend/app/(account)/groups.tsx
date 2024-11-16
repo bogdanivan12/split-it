@@ -7,8 +7,6 @@ import {
   TextInput,
   FlatList,
   TouchableOpacity,
-  KeyboardAvoidingView,
-  Platform,
   TouchableWithoutFeedback,
   Keyboard,
   Dimensions,
@@ -16,7 +14,7 @@ import {
 } from "react-native";
 import React, { useState } from "react";
 import { Link } from "expo-router";
-import { FontAwesome } from "@expo/vector-icons";
+import { FontAwesome, FontAwesome6 } from "@expo/vector-icons";
 import { Colors } from "@/constants/Theme";
 import { generalStyles } from "@/constants/SharedStyles";
 
@@ -31,10 +29,20 @@ const Groups: React.FC = () => {
     { id: "2", name: "Group2" },
   ]);
   const [modalVisible, setModalVisible] = useState<boolean>(false);
+  const [joinModalVisible, setJoinModalVisible] = useState<boolean>(false);
   const [groupName, setGroupName] = useState<string>("");
+  const [groupCode, setGroupCode] = useState<string>("");
   const [groupDescription, setGroupDescription] = useState<string>("");
 
-  const toggleModal = () => setModalVisible(!modalVisible);
+  const toggleModal = () => {
+    setGroupDescription("");
+    setGroupName("");
+    setModalVisible((prev) => !prev);
+  };
+  const toggleJoinModal = () => {
+    setGroupCode("");
+    setJoinModalVisible((prev) => !prev);
+  };
 
   const addGroup = () => {
     if (groupName.trim() === "") {
@@ -48,9 +56,14 @@ const Groups: React.FC = () => {
     };
 
     setGroups([...groups, newGroup]);
-    setGroupName("");
-    setGroupDescription("");
     toggleModal();
+  };
+
+  const joinGroup = () => {
+    if (groupCode.trim() === "") {
+      alert("Please fill in the group code");
+      return;
+    }
   };
 
   return (
@@ -64,7 +77,9 @@ const Groups: React.FC = () => {
         <ScrollView contentContainerStyle={generalStyles.scrollContainer}>
           <View onStartShouldSetResponder={() => true} style={styles.container}>
             <View style={styles.absoluteFill} />
-            <Text style={styles.header}>Which group are you tricking today?</Text>
+            <Text style={styles.header}>
+              Which group are you tricking today?
+            </Text>
             <FlatList
               data={groups}
               scrollEnabled={false}
@@ -92,7 +107,21 @@ const Groups: React.FC = () => {
                   size={20}
                   color={Colors.theme1.text2}
                 />
-                <Text style={styles.addButtonText}>Add Group</Text>
+                <Text style={styles.addButtonText}>Create Group</Text>
+              </View>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.addButton}
+              onPress={toggleJoinModal}
+            >
+              <View style={styles.addButtonContent}>
+                <FontAwesome6
+                  name="archway"
+                  size={20}
+                  color={Colors.theme1.text2}
+                />
+                <Text style={styles.addButtonText}>Join Group</Text>
               </View>
             </TouchableOpacity>
 
@@ -102,61 +131,121 @@ const Groups: React.FC = () => {
               transparent={true}
               onRequestClose={toggleModal}
             >
-              <TouchableWithoutFeedback onPress={toggleModal}>
-                <View style={styles.modalOverlay} />
-              </TouchableWithoutFeedback>
-              <TouchableWithoutFeedback
-                onPress={() => {
-                  Keyboard.dismiss();
-                }}
-              >
-                <View style={styles.modalContainer}>
-                  <Text style={styles.modalTitle}>Create New Group</Text>
-                  <ScrollView
-                    contentContainerStyle={{
-                      ...generalStyles.scrollContainer,
-                      justifyContent: "flex-start",
-                    }}
-                  >
-                    <View
-                      style={{ marginTop: 10 }}
-                      onStartShouldSetResponder={() => true}
+              <View style={styles.modal}>
+                <TouchableWithoutFeedback onPress={toggleModal}>
+                  <View style={styles.modalOverlay} />
+                </TouchableWithoutFeedback>
+                <TouchableWithoutFeedback
+                  onPress={() => {
+                    Keyboard.dismiss();
+                  }}
+                >
+                  <View style={styles.modalContainer}>
+                    <Text style={styles.modalTitle}>Create New Group</Text>
+                    <ScrollView
+                      contentContainerStyle={{
+                        ...generalStyles.scrollContainer,
+                        justifyContent: "flex-start",
+                      }}
                     >
-                      <TextInput
-                        style={styles.input}
-                        placeholder="Group Name (required)"
-                        value={groupName}
-                        onChangeText={setGroupName}
-                        placeholderTextColor={Colors.theme1.inputPlaceholder}
-                      />
-
-                      <TextInput
-                        style={[styles.input, styles.descriptionInput]}
-                        placeholder="Group Description (optional)"
-                        value={groupDescription}
-                        onChangeText={setGroupDescription}
-                        placeholderTextColor={Colors.theme1.inputPlaceholder}
-                        multiline
-                      />
-                    </View>
-
-                    <View style={styles.modalActions}>
-                      <TouchableOpacity
-                        style={styles.modalButtonCancel}
-                        onPress={toggleModal}
+                      <View
+                        style={{ marginTop: 10 }}
+                        onStartShouldSetResponder={() => true}
                       >
-                        <Text style={styles.modalButtonText}>Cancel</Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        style={styles.modalButtonCreate}
-                        onPress={addGroup}
+                        <TextInput
+                          style={styles.input}
+                          placeholder="Group Name (required)"
+                          value={groupName}
+                          onChangeText={setGroupName}
+                          placeholderTextColor={Colors.theme1.inputPlaceholder}
+                        />
+
+                        <TextInput
+                          style={[styles.input, styles.descriptionInput]}
+                          placeholder="Group Description (optional)"
+                          value={groupDescription}
+                          onChangeText={setGroupDescription}
+                          placeholderTextColor={Colors.theme1.inputPlaceholder}
+                          multiline
+                        />
+                      </View>
+
+                      <View style={styles.modalActions}>
+                        <TouchableOpacity
+                          style={styles.modalButton}
+                          onPress={toggleModal}
+                        >
+                          <Text style={styles.modalButtonText}>Cancel</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          style={styles.modalButton}
+                          onPress={addGroup}
+                        >
+                          <Text style={styles.modalButtonText}>Create</Text>
+                        </TouchableOpacity>
+                      </View>
+                    </ScrollView>
+                  </View>
+                </TouchableWithoutFeedback>
+              </View>
+            </Modal>
+
+            <Modal
+              animationType="fade"
+              visible={joinModalVisible}
+              transparent={true}
+              onRequestClose={toggleJoinModal}
+            >
+              <View style={styles.modal}>
+                <TouchableWithoutFeedback onPress={toggleJoinModal}>
+                  <View style={styles.modalOverlay} />
+                </TouchableWithoutFeedback>
+                <TouchableWithoutFeedback
+                  onPress={() => {
+                    Keyboard.dismiss();
+                  }}
+                >
+                  <View style={styles.modalContainer}>
+                    <Text style={styles.modalTitle}>Join Group</Text>
+                    <ScrollView
+                      contentContainerStyle={{
+                        ...generalStyles.scrollContainer,
+                        justifyContent: "flex-start",
+                      }}
+                    >
+                      <View
+                        style={{ marginTop: 10 }}
+                        onStartShouldSetResponder={() => true}
                       >
-                        <Text style={styles.modalButtonText}>Create</Text>
-                      </TouchableOpacity>
-                    </View>
-                  </ScrollView>
-                </View>
-              </TouchableWithoutFeedback>
+                        <TextInput
+                          style={styles.input}
+                          placeholder="Group Code"
+                          value={groupCode}
+                          onChangeText={setGroupCode}
+                          placeholderTextColor={Colors.theme1.inputPlaceholder}
+                        />
+                      </View>
+
+                      <View style={styles.modalActions}>
+                        <TouchableOpacity
+                          style={styles.modalButton}
+                          onPress={toggleJoinModal}
+                        >
+                          <Text style={styles.modalButtonText}>Cancel</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          style={styles.modalButton}
+                          onPress={joinGroup}
+                        >
+                          <Text style={styles.modalButtonText}>
+                            Send request
+                          </Text>
+                        </TouchableOpacity>
+                      </View>
+                    </ScrollView>
+                  </View>
+                </TouchableWithoutFeedback>
+              </View>
             </Modal>
           </View>
         </ScrollView>
@@ -182,7 +271,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
     fontFamily: "AlegreyaBold",
     textAlign: "center",
-    color: Colors.black,
+    color: Colors.theme1.text,
   },
   groupList: {
     flexGrow: 0,
@@ -198,7 +287,7 @@ const styles = StyleSheet.create({
     borderRadius: 5,
   },
   text: {
-    color: Colors.black,
+    color: Colors.theme1.text3,
     fontFamily: "AlegreyaBold",
     textAlign: "center",
     fontSize: 16,
@@ -221,21 +310,28 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   modalOverlay: {
-    flex: 1,
+    position: "absolute",
+    top: 0,
+    bottom: 0,
+    left: 0,
+    right: 0,
     backgroundColor: "rgba(0, 0, 0, 0.5)",
   },
-  modalContainer: {
+  modal: {
     position: "absolute",
-    top: "30%",
-    left: "5%",
-    right: "5%",
+    top: 0,
+    bottom: 0,
+    left: 0,
+    right: 0,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalContainer: {
+    width: "90%",
     backgroundColor: Colors.theme1.background1,
     padding: 20,
     elevation: 5,
-    borderRadius: 20
-  },
-  modalContent: {
-    alignItems: "center",
+    borderRadius: 20,
   },
   modalTitle: {
     fontSize: 20,
@@ -257,22 +353,14 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     width: "100%",
     marginTop: 20,
+    gap: 15,
   },
-  modalButtonCancel: {
-    backgroundColor: Colors.theme1.button,
+  modalButton: {
+    backgroundColor: Colors.theme1.button3,
     padding: 10,
     borderRadius: 5,
     flex: 1,
     alignItems: "center",
-    marginRight: 5,
-  },
-  modalButtonCreate: {
-    backgroundColor: Colors.theme1.button,
-    padding: 10,
-    borderRadius: 5,
-    flex: 1,
-    alignItems: "center",
-    marginLeft: 5,
   },
   modalButtonText: {
     color: Colors.theme1.text,

@@ -5,7 +5,6 @@ import {
   TextInput,
   TouchableOpacity,
   KeyboardAvoidingView,
-  Platform,
   TouchableWithoutFeedback,
   Keyboard,
   ScrollView,
@@ -158,7 +157,7 @@ export default function Profile() {
       }}
     >
       <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        onStartShouldSetResponder={() => true}
         style={styles.container}
       >
         <Animated.View
@@ -168,7 +167,11 @@ export default function Profile() {
             <Text style={styles.title}>Profile</Text>
             {!isEditing && (
               <TouchableOpacity onPress={handleEditToggle}>
-                <FontAwesome name="pencil" size={24} color={Colors.black} />
+                <FontAwesome
+                  name="pencil"
+                  size={24}
+                  color={Colors.theme1.text3}
+                />
               </TouchableOpacity>
             )}
           </View>
@@ -177,75 +180,79 @@ export default function Profile() {
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
           >
-            <View onStartShouldSetResponder={() => true}>
-              <ProfileField
-                isEditing={isEditing}
-                name="Username"
-                editable={false}
-                onChange={(text) =>
-                  !actionsBlocked &&
-                  setEditedUser({ ...editedUser, username: text })
-                }
-                value={editedUser.username}
-              />
+            <ProfileField
+              isEditing={isEditing}
+              name="Username"
+              editable={false}
+              onChange={(text) =>
+                !actionsBlocked &&
+                setEditedUser({ ...editedUser, username: text })
+              }
+              value={editedUser.username}
+            />
 
-              <ProfileField
-                isEditing={isEditing}
-                name="Email"
-                editable={false}
-                onChange={(text) =>
-                  !actionsBlocked &&
-                  setEditedUser({ ...editedUser, email: text })
-                }
-                value={editedUser.email}
-              />
+            <ProfileField
+              isEditing={isEditing}
+              name="Email"
+              editable={false}
+              onChange={(text) =>
+                !actionsBlocked && setEditedUser({ ...editedUser, email: text })
+              }
+              value={editedUser.email}
+            />
 
-              <ProfileField
-                isEditing={isEditing}
-                name="Full Name"
-                onChange={(text) =>
-                  !actionsBlocked &&
-                  setEditedUser({ ...editedUser, fullName: text })
-                }
-                value={editedUser.fullName}
-              />
+            <ProfileField
+              isEditing={isEditing}
+              name="Full Name"
+              onChange={(text) =>
+                !actionsBlocked &&
+                setEditedUser({ ...editedUser, fullName: text })
+              }
+              value={editedUser.fullName}
+            />
 
-              <ProfileField
-                isEditing={isEditing}
-                name="Phone Number"
-                onChange={(text) =>
-                  !actionsBlocked &&
-                  setEditedUser(
-                    {
-                      ...editedUser,
-                      phoneNumber: text,
-                    }
-                    // verify phone number mechanism
-                  )
-                }
-                value={editedUser.phoneNumber}
-              />
+            <ProfileField
+              isEditing={isEditing}
+              name="Phone Number"
+              onChange={(text) =>
+                !actionsBlocked &&
+                setEditedUser(
+                  {
+                    ...editedUser,
+                    phoneNumber: text,
+                  }
+                  // verify phone number mechanism
+                )
+              }
+              value={editedUser.phoneNumber}
+            />
 
-              {isEditing && (
-                <View style={styles.buttonsContainer}>
-                  <TouchableOpacity
+            {isEditing && (
+              <View style={styles.buttonsContainer}>
+                <TouchableOpacity
+                  style={{
+                    ...styles.editButton,
+                    backgroundColor: Colors.theme1.button3,
+                  }}
+                  onPress={cancelEdit}
+                >
+                  <Text style={styles.buttonText}>Back</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.editButton}
+                  onPress={handleSave}
+                >
+                  <Text
                     style={{
-                      ...styles.editButton,
-                      backgroundColor: Colors.theme1.button2,
+                      ...styles.buttonText,
+                      color: Colors.theme1.text1,
                     }}
-                    onPress={cancelEdit}
                   >
-                    <Text style={styles.buttonText}>Back</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.editButton}
-                    onPress={handleSave}
-                  >
-                    <Text style={styles.buttonText}>Save</Text>
-                  </TouchableOpacity>
-                </View>
-              )}
-            </View>
+                    Save
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
           </ScrollView>
         </Animated.View>
         <TouchableOpacity style={styles.logoutButton} onPress={logout}>
@@ -254,7 +261,7 @@ export default function Profile() {
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={styles.logoutButton}
+          style={{ ...styles.logoutButton, marginBottom: "30%" }}
           onPress={deleteAccountClick}
         >
           <Text
@@ -286,6 +293,7 @@ const styles = StyleSheet.create({
   },
   profileBox: {
     width: "90%",
+    maxHeight: "65%",
     padding: 20,
     backgroundColor: Colors.theme1.background1,
     borderRadius: 10,
@@ -299,7 +307,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 20,
+    marginBottom: 10,
   },
   title: {
     fontFamily: "AlegreyaBold",
@@ -312,20 +320,21 @@ const styles = StyleSheet.create({
   label: {
     fontFamily: "AlegreyaMedium",
     fontSize: 16,
-    color: Colors.theme1.text,
+    color: Colors.theme1.text3,
   },
   value: {
     fontFamily: "AlegreyaRegular",
-    fontSize: 18,
+    fontSize: 16,
     color: Colors.theme1.inputText,
     marginTop: 5,
   },
   input: {
     ...generalStyles.input,
     width: "99%",
+    marginBottom: 5,
   },
   editButton: {
-    backgroundColor: Colors.theme1.button,
+    backgroundColor: Colors.theme1.button2,
     padding: 12,
     borderRadius: 5,
     alignItems: "center",
@@ -342,7 +351,7 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     fontFamily: "AlegreyaRegular",
-    color: Colors.black,
+    color: Colors.theme1.text,
     fontSize: 16,
     fontWeight: "bold",
   },

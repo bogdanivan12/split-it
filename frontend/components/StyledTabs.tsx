@@ -7,15 +7,35 @@ export const StyledTabs = (props: ComponentProps<typeof DTabs>) => {
     <DTabs
       screenOptions={{
         headerShadowVisible: false,
-        headerStyle: { backgroundColor: Colors.theme1.background2 },
-        headerTitleStyle: { color: Colors.theme1.tabText, fontFamily: 'AlegreyaBold', fontSize: 24 },
+        headerStyle: {
+          backgroundColor: Colors.theme1.background2,
+        },
+        headerTitleStyle: {
+          color: Colors.theme1.text,
+          fontFamily: "AlegreyaBold",
+          fontSize: 24,
+        },
         tabBarActiveTintColor: Colors.theme1.tabIconSelected,
         tabBarInactiveTintColor: Colors.theme1.tabIconNormal,
         tabBarStyle: {
-          backgroundColor: Colors.theme1.background2,
           borderTopWidth: 0,
+          borderRadius: 100,
+          bottom: 30,
+          left: "auto",
+          right: "auto",
+          width: "90%",
+          alignSelf: "center",
+          justifyContent: "center",
+          position: "absolute",
+          backgroundColor: Colors.theme1.tabBackgroundNormal,
         },
-        tabBarShowLabel: false
+        tabBarItemStyle: {
+          top: 10,
+          alignSelf: "center",
+          justifyContent: "center", // Center content within each tab
+          alignItems: "center", // Horizontal centering
+        },
+        tabBarShowLabel: false,
       }}
       {...props}
     />

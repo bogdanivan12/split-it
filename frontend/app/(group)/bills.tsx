@@ -20,7 +20,9 @@ const Bills: React.FC = () => {
   return (
     <View style={styles.container}>
       <Text style={styles.header}>What has been paid?</Text>
-      <Text style={styles.subHeader}>Navigate through the bills that are split in this group.</Text>
+      <Text style={styles.subHeader}>
+        Navigate through the bills that are split in this group.
+      </Text>
 
       <FlatList
         data={billsData}
@@ -36,7 +38,9 @@ const Bills: React.FC = () => {
           >
             <TouchableOpacity style={styles.billContainer}>
               <Text style={styles.billName}>{item.name}</Text>
-              <Text style={styles.billDetails}>{item.amount} - Created on: {item.dateCreated}</Text>
+              <Text style={styles.billDetails}>
+                {item.amount} - Created on: {item.dateCreated}
+              </Text>
             </TouchableOpacity>
           </Link>
         )}
@@ -65,32 +69,32 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: "AlegreyaMedium",
     marginBottom: 20,
-    color: Colors.theme1.text3,
+    color: Colors.theme1.text4,
   },
   billsContainer: {
-    flexDirection: 'column',
+    flexDirection: "column",
   },
   billContainer: {
-    backgroundColor: Colors.theme1.button,
+    backgroundColor: Colors.theme1.button5,
     padding: 15,
     borderRadius: 8,
     marginBottom: 10,
     shadowOffset: { width: 1, height: 1 },
     shadowOpacity: 0.4,
     shadowRadius: 2,
-    width: '95%',
-    alignSelf: 'center'
+    width: "95%",
+    alignSelf: "center",
   },
   billName: {
     fontSize: 18,
     fontFamily: "AlegreyaMedium",
     fontWeight: "bold",
-    color: Colors.black,
+    color: Colors.theme1.text1,
   },
   billDetails: {
     fontSize: 14,
     fontFamily: "AlegreyaMedium",
-    color: Colors.theme1.text,
+    color: Colors.theme1.text1,
   },
   billList: {
     marginTop: 10,
