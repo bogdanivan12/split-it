@@ -4,16 +4,18 @@ import {
   StyleSheet,
   FlatList,
   TouchableOpacity,
+  ScrollView,
 } from "react-native";
 import React from "react";
 import { Link } from "expo-router";
 import { Colors } from "@/constants/Theme";
 import { Bill } from "@/types/Bill.types";
+import { generalStyles } from "@/constants/SharedStyles";
 
 const billsData: Bill[] = [
   { id: "1", name: "Electricity", amount: "$120", dateCreated: "2023-12-01" },
   { id: "2", name: "Water", amount: "$45", dateCreated: "2023-12-05" },
-  { id: "3", name: "Internet", amount: "$80", dateCreated: "2023-12-10" },
+  { id: "4", name: "Internet", amount: "$80", dateCreated: "2023-12-10" },
 ];
 
 const Bills: React.FC = () => {
@@ -23,29 +25,31 @@ const Bills: React.FC = () => {
       <Text style={styles.subHeader}>
         Navigate through the bills that are split in this group.
       </Text>
-
-      <FlatList
-        data={billsData}
-        contentContainerStyle={styles.billsContainer}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <Link
-            asChild
-            href={{
-              pathname: `/(bills)`,
-              params: { id: item.id },
-            }}
-          >
-            <TouchableOpacity style={styles.billContainer}>
-              <Text style={styles.billName}>{item.name}</Text>
-              <Text style={styles.billDetails}>
-                {item.amount} - Created on: {item.dateCreated}
-              </Text>
-            </TouchableOpacity>
-          </Link>
-        )}
-        style={styles.billList}
-      />
+      <ScrollView
+        contentContainerStyle={{
+          paddingBottom: 200,
+        }}
+      >
+        {billsData.map((item) => {
+          return (
+            <Link
+              key={item.id}
+              asChild
+              href={{
+                pathname: `/(bills)`,
+                params: { id: item.id },
+              }}
+            >
+              <TouchableOpacity style={styles.billContainer}>
+                <Text style={styles.billName}>{item.name}</Text>
+                <Text style={styles.billDetails}>
+                  {item.amount} - Created on: {item.dateCreated}
+                </Text>
+              </TouchableOpacity>
+            </Link>
+          );
+        })}
+      </ScrollView>
     </View>
   );
 };
