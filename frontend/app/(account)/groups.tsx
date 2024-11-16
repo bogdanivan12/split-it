@@ -14,7 +14,7 @@ import {
 } from "react-native";
 import React, { useState } from "react";
 import { Link } from "expo-router";
-import { FontAwesome, FontAwesome6 } from "@expo/vector-icons";
+import { FontAwesome, FontAwesome5, FontAwesome6 } from "@expo/vector-icons";
 import { Colors } from "@/constants/Theme";
 import { generalStyles } from "@/constants/SharedStyles";
 
@@ -93,6 +93,11 @@ const Groups: React.FC = () => {
                   }}
                 >
                   <Pressable style={styles.button}>
+                    <FontAwesome5
+                      name="crown"
+                      size={20}
+                      color={Colors.theme1.text3}
+                    />
                     <Text style={styles.text}>{`${item.name}`}</Text>
                   </Pressable>
                 </Link>
@@ -285,6 +290,10 @@ const styles = StyleSheet.create({
     minWidth: "55%",
     marginVertical: 5,
     borderRadius: 5,
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 10,
   },
   text: {
     color: Colors.theme1.text3,
@@ -300,14 +309,14 @@ const styles = StyleSheet.create({
   },
   addButtonContent: {
     flexDirection: "row",
-    alignItems: "flex-start",
+    alignItems: "center",
+    gap: 8,
   },
   addButtonText: {
     color: "white",
     fontSize: 16,
     fontFamily: "AlegreyaBold",
     fontWeight: "bold",
-    marginLeft: 8,
   },
   modalOverlay: {
     position: "absolute",
