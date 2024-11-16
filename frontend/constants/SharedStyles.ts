@@ -20,6 +20,52 @@ export const generalStyles = StyleSheet.create({
   },
 });
 
+export const modalStyles = StyleSheet.create({
+  modalContainer: {
+    width: "90%",
+    backgroundColor: Colors.theme1.background1,
+    padding: 20,
+    elevation: 5,
+    borderRadius: 20,
+  },
+
+  modalTitle: {
+    fontSize: 20,
+    fontFamily: "AlegreyaBold",
+    fontWeight: "bold",
+    marginBottom: 5,
+    color: Colors.theme1.text,
+  },
+  input: {
+    ...generalStyles.input,
+    width: "99%",
+  },
+  descriptionInput: {
+    height: 60,
+    textAlignVertical: "top",
+  },
+  modalActions: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: "100%",
+    marginTop: 20,
+    gap: 15,
+  },
+  modalButton: {
+    backgroundColor: Colors.theme1.button3,
+    padding: 10,
+    borderRadius: 5,
+    flex: 1,
+    alignItems: "center",
+  },
+  modalButtonText: {
+    color: Colors.theme1.text,
+    fontFamily: "AlegreyaBold",
+    fontWeight: "bold",
+    fontSize: 16,
+  },
+});
+
 export const signUpStyles = StyleSheet.create({
   container: {
     flex: 1,

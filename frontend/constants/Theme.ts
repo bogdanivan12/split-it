@@ -31,5 +31,8 @@ export const Colors = {
     button3: "#31515f",
     button4: "#111c20",
     button5: "#ade4fc",
+    textReject: "red",
+    textAccept: "green",
+    notificationUnread: "red",
   },
 };
