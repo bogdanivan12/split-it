@@ -7,6 +7,7 @@ import {
   View,
   Text,
   StyleSheet,
+  Dimensions,
 } from "react-native";
 import { generalStyles, modalStyles } from "@/constants/SharedStyles";
 import { Colors } from "@/constants/Theme";
@@ -20,7 +21,7 @@ const InvitedUser = ({
   remove: () => void;
 }) => {
   return (
-    <View style={styles.userWrapper}>
+    <View onStartShouldSetResponder={() => true} style={styles.userWrapper}>
       <Text style={styles.userText}>{username}</Text>
       <TouchableOpacity onPress={remove}>
         <Entypo size={36} name="cross" color={Colors.theme1.textReject} />
@@ -37,16 +38,15 @@ export const InviteModal = ({
   onClose: () => void;
 }) => {
   const [searchValue, setSearchValue] = useState("");
-  const [invitedUsers, setInvitedUsers] = useState<string[]>([
-    "salut",
-    "safdasdf",
-  ]);
+  const [invitedUsers, setInvitedUsers] = useState<string[]>([]);
   const cancel = () => {
     setSearchValue("");
+    setInvitedUsers([])
     onClose();
   };
   const invite = () => {
     setSearchValue("");
+    setInvitedUsers([])
     onClose();
   };
   const add = () => {
@@ -62,17 +62,23 @@ export const InviteModal = ({
   };
   return (
     <CenteredModal onClose={cancel} visible={open}>
-      <View style={modalStyles.modalContainer}>
+      <View
+        style={{
+          ...modalStyles.modalContainer,
+          maxHeight: Dimensions.get("screen").height * 0.5,
+        }}
+      >
         <Text style={modalStyles.modalTitle}>Search people to invite</Text>
         <ScrollView
-          onStartShouldSetResponder={() => true}
           contentContainerStyle={{
-            ...generalStyles.scrollContainer,
-            width: "100%",
-            justifyContent: "flex-start",
+            paddingBottom: 10,
           }}
+          keyboardShouldPersistTaps="handled"
         >
-          <View style={styles.inputContainer}>
+          <View
+            onStartShouldSetResponder={() => true}
+            style={styles.inputContainer}
+          >
             <TextInput
               style={styles.input}
               placeholder="Search..."
@@ -128,7 +134,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 20,
-    height: "50%",
+    height: 40
   },
   invitedUsersContainer: {},
   inputContainer: {
