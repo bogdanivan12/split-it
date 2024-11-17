@@ -1,6 +1,13 @@
 from typing import Optional, List
 from beanie import PydanticObjectId
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, EmailStr
+
+
+class UpdateUserRequest(BaseModel):
+    email: Optional[EmailStr] = Field(min_length=5, max_length=50)
+    full_name: Optional[str] = Field(max_length=50)
+    phone_number: Optional[str] = Field(None, min_length=9, max_length=15)
+    revolut_id: Optional[str] = Field(None, min_length=5, max_length=20)
 
 
 class CreateGroupRequest(BaseModel):
