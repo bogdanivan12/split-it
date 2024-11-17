@@ -18,7 +18,7 @@ import { Link } from "expo-router";
 import { FontAwesome, FontAwesome5, FontAwesome6 } from "@expo/vector-icons";
 import { Colors } from "@/constants/Theme";
 import { generalStyles, modalStyles } from "@/constants/SharedStyles";
-import CenteredModal from "@/components/CenteredModal";
+import CenteredModal from "@/components/modals/CenteredModal";
 
 interface Group {
   id: string;
@@ -76,7 +76,6 @@ const Groups: React.FC = () => {
           style: "cancel",
         },
       ]);
-      return;
       return;
     }
   };
