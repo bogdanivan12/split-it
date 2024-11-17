@@ -12,8 +12,9 @@ import React, { useState } from "react";
 import { Colors } from "@/constants/Theme";
 import { Group as GroupType } from "@/types/Group.types";
 import { Entypo, FontAwesome } from "@expo/vector-icons";
-import CenteredModal from "@/components/CenteredModal";
+import CenteredModal from "@/components/modals/CenteredModal";
 import { generalStyles, modalStyles } from "@/constants/SharedStyles";
+import { InviteModal } from "@/components/modals/InviteModal";
 
 const gd: GroupType = {
   id: "group1",
@@ -53,6 +54,7 @@ const gd: GroupType = {
 const Group: React.FC = () => {
   const [isAdmin, setIsAdmin] = useState(true);
   const [editModalOpen, setEditModalOpen] = useState(false);
+  const [inviteModalOpen, setInviteModalOpen] = useState(false);
   const [groupDetails, setGroupDetails] = useState(gd);
   const [editedDetails, setEditedDetails] = useState({
     name: gd.name,
@@ -90,58 +92,69 @@ const Group: React.FC = () => {
   };
   return (
     <View style={styles.container}>
-      <CenteredModal
-        onClose={() => setEditModalOpen(false)}
-        visible={editModalOpen}
-      >
-        <View style={modalStyles.modalContainer}>
-          <Text style={modalStyles.modalTitle}>Edit group information</Text>
-          <ScrollView
-            contentContainerStyle={{
-              ...generalStyles.scrollContainer,
-              justifyContent: "flex-start",
-            }}
-          >
-            <View
-              style={{ marginTop: 10 }}
-              onStartShouldSetResponder={() => true}
+      {isAdmin && (
+        <CenteredModal
+          onClose={() => setEditModalOpen(false)}
+          visible={editModalOpen}
+        >
+          <View style={modalStyles.modalContainer}>
+            <Text style={modalStyles.modalTitle}>Edit group information</Text>
+            <ScrollView
+              contentContainerStyle={{
+                ...generalStyles.scrollContainer,
+                justifyContent: "flex-start",
+              }}
             >
-              <TextInput
-                style={generalStyles.input}
-                placeholder="Group Name (required)"
-                value={editedDetails.name}
-                onChangeText={(i) =>
-                  setEditedDetails((prev) => ({ ...prev, name: i }))
-                }
-                placeholderTextColor={Colors.theme1.inputPlaceholder}
-              />
-
-              <TextInput
-                style={[modalStyles.input, modalStyles.descriptionInput]}
-                placeholder="Group Description (optional)"
-                value={editedDetails.description}
-                onChangeText={(i) =>
-                  setEditedDetails((prev) => ({ ...prev, description: i }))
-                }
-                placeholderTextColor={Colors.theme1.inputPlaceholder}
-                multiline
-              />
-            </View>
-
-            <View style={modalStyles.modalActions}>
-              <TouchableOpacity
-                style={modalStyles.modalButton}
-                onPress={discard}
+              <View
+                style={{ marginTop: 10 }}
+                onStartShouldSetResponder={() => true}
               >
-                <Text style={modalStyles.modalButtonText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={modalStyles.modalButton} onPress={save}>
-                <Text style={modalStyles.modalButtonText}>Save</Text>
-              </TouchableOpacity>
-            </View>
-          </ScrollView>
-        </View>
-      </CenteredModal>
+                <TextInput
+                  style={generalStyles.input}
+                  placeholder="Group Name (required)"
+                  value={editedDetails.name}
+                  onChangeText={(i) =>
+                    setEditedDetails((prev) => ({ ...prev, name: i }))
+                  }
+                  placeholderTextColor={Colors.theme1.inputPlaceholder}
+                />
+
+                <TextInput
+                  style={[modalStyles.input, modalStyles.descriptionInput]}
+                  placeholder="Group Description (optional)"
+                  value={editedDetails.description}
+                  onChangeText={(i) =>
+                    setEditedDetails((prev) => ({ ...prev, description: i }))
+                  }
+                  placeholderTextColor={Colors.theme1.inputPlaceholder}
+                  multiline
+                />
+              </View>
+
+              <View style={modalStyles.modalActions}>
+                <TouchableOpacity
+                  style={modalStyles.modalButton}
+                  onPress={discard}
+                >
+                  <Text style={modalStyles.modalButtonText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={modalStyles.modalButton}
+                  onPress={save}
+                >
+                  <Text style={modalStyles.modalButtonText}>Save</Text>
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
+          </View>
+        </CenteredModal>
+      )}
+      {isAdmin && (
+        <InviteModal
+          open={inviteModalOpen}
+          onClose={() => setInviteModalOpen(false)}
+        />
+      )}
       <View style={styles.headerWrapper}>
         <Text style={styles.header}>{groupDetails.name}</Text>
         {isAdmin && (
@@ -201,6 +214,17 @@ const Group: React.FC = () => {
                   </View>
                 </View>
               ))}
+            {isAdmin && (
+              <TouchableOpacity onPress={() => setInviteModalOpen(true)}>
+                <View style={styles.memberContainer}>
+                  <FontAwesome
+                    name="plus-square"
+                    size={80}
+                    color={Colors.theme1.text2}
+                  />
+                </View>
+              </TouchableOpacity>
+            )}
           </View>
         </View>
       </ScrollView>
@@ -256,9 +280,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     borderRadius: 8,
     marginVertical: 8,
-    shadowOffset: { width: 1, height: 1 },
-    shadowOpacity: 0.4,
-    shadowRadius: 2,
   },
   memberText: {
     fontFamily: "AlegreyaItalic",
