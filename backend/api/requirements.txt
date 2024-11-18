@@ -1,0 +1,11 @@
+pydantic==2.9.2
+uvicorn==0.32.0
+fastapi==0.115.4
+PyJWT==2.9.0
+passlib==1.7.4
+motor==3.6.0
+email-validator==2.2.0
+bcrypt==4.2.0
+python-multipart==0.0.17
+beanie==1.27.0
+python-dotenv==1.0.1
