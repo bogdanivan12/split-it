@@ -1,1 +1,0 @@
-export const MainFont = 'SpaceMono-Regular.ttf'
