@@ -55,6 +55,7 @@ export const InviteModal = ({
       // fetch backend if the user exists
       // alert user does not exist
     }
+    setSearchValue("");
     setInvitedUsers((prev) => [...prev, searchValue]);
   };
   const remove = (user: string) => {
