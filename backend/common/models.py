@@ -104,7 +104,7 @@ class Request(BaseModel):
     group_id: PydanticObjectId
     sender_id: PydanticObjectId
     recipient_id: PydanticObjectId
-    date: datetime = datetime.now()
+    date: datetime = Field(default_factory=datetime.now)
     type: RequestType = RequestType.JOIN_GROUP
     status: RequestStatus = RequestStatus.PENDING
 
