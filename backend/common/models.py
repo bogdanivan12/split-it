@@ -31,7 +31,7 @@ class Group(BaseModel):
     owner_id: Optional[PydanticObjectId] = Field(default=None)
     member_ids: List[PydanticObjectId] = Field(default_factory=list)
     bill_ids: Optional[List[PydanticObjectId]] = Field(default_factory=list)
-    join_code: str
+    join_code: Optional[str] = Field(min_length=4, max_length=20, default=None)
 
     class Config:
         json_encoders = {PydanticObjectId: str}
@@ -65,13 +65,13 @@ class Bill(BaseModel):
     payment_ids: List[str] = []
 
 
-class PaymentMethod(Enum):
+class PaymentMethod(str, Enum):
     NOT_SELECTED = "NOT_SELECTED"
     CASH = "CASH"
     REVOLUT = "REVOLUT"
 
 
-class PaymentStatus(Enum):
+class PaymentStatus(str, Enum):
     NOT_STARTED = "NOT_STARTED"
     IN_PROGRESS = "IN_PROGRESS"
     COMPLETED = "COMPLETED"
@@ -88,25 +88,28 @@ class Payment(BaseModel):
     status: PaymentStatus = PaymentStatus.NOT_STARTED
 
 
-class RequestStatus(Enum):
+class RequestStatus(str, Enum):
     PENDING = "PENDING"
     ACCEPTED = "ACCEPTED"
     DECLINED = "DECLINED"
 
 
-class RequestType(Enum):
+class RequestType(str, Enum):
     JOIN_GROUP = "JOIN_GROUP"
     JOIN_MINIGAME = "JOIN_MINIGAME"
 
 
 class Request(BaseModel):
-    id: str
-    group_id: str
-    sender_id: str
-    recipient_id: str
-    date: datetime
-    type: RequestType
+    id: Optional[PydanticObjectId] = Field(alias="_id", default=None)
+    group_id: PydanticObjectId
+    sender_id: PydanticObjectId
+    recipient_id: PydanticObjectId
+    date: datetime = Field(default_factory=datetime.now)
+    type: RequestType = RequestType.JOIN_GROUP
     status: RequestStatus = RequestStatus.PENDING
+
+    class Config:
+        json_encoders = {PydanticObjectId: str}
 
 
 class Token(BaseModel):
