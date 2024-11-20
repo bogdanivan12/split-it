@@ -2,6 +2,7 @@ import string
 import secrets
 
 from starlette import status
+from datetime import datetime
 from typing import Annotated, List
 from beanie import PydanticObjectId
 from fastapi import APIRouter, HTTPException, Depends
@@ -164,3 +165,34 @@ async def update_group(
     group.id = group_id
 
     return group
+
+
+@router.post("/join/{join_code}", status_code=status.HTTP_201_CREATED)
+async def join_group(
+        join_code: str,
+        user: Annotated[models.User, Depends(users.get_current_user)]
+):
+    """
+    # Join a group using a join code
+    Validates the join code and creates a join request.
+    """
+    group_dict = db["groups"].find_one({"join_code": join_code})
+    if not group_dict:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail="Invalid join code")
+
+    group = models.Group(**group_dict)
+    join_request = models.Request(
+        group_id=group.id,
+        sender_id=user.id,
+        recipient_id=group.owner_id,
+        date=datetime.now()
+    )
+    join_request_dict = join_request.model_dump(by_alias=True)
+    join_request_dict.pop("_id", None)
+
+    try:
+        db["requests"].insert_one(join_request_dict)
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_424_FAILED_DEPENDENCY,
+                            detail=str(e))
