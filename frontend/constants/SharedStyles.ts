@@ -74,7 +74,7 @@ export const signUpStyles = StyleSheet.create({
   },
   logoContainer: {
     position: "absolute",
-    top: "5%",
+    top: 0,
     right: 0,
     left: 0,
     alignItems: "center",
@@ -91,7 +91,12 @@ export const signUpStyles = StyleSheet.create({
     shadowRadius: 5,
     elevation: 5,
     maxHeight: "60%",
-    marginBottom: 100,
+  },
+  boxWrapper: {
+    // marginBottom: 100,
+    flex: 1,
+    justifyContent: "center",
+    gap: 10
   },
   headerText: {
     fontFamily: "AlegreyaBold",
@@ -101,7 +106,7 @@ export const signUpStyles = StyleSheet.create({
     textAlign: "center",
   },
   input: generalStyles.input,
-  scrollContainer: generalStyles.scrollContainer,
+  scrollContainer: { ...generalStyles.scrollContainer, paddingBottom: 20 },
   logo: {
     width: 100,
     height: 100,

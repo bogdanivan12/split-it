@@ -2,7 +2,7 @@ import { Colors } from "@/constants/Theme";
 import React, { useEffect, useRef } from "react";
 import { Animated, View, StyleSheet, Easing } from "react-native";
 
-const AnimatedBackground = () => {
+export const AnimatedBackground = () => {
   const borderRadiusAnim = useRef(new Animated.Value(0)).current;
   const rotationAnim = useRef(new Animated.Value(0)).current;
   const colorAnim = useRef(new Animated.Value(0)).current;
@@ -90,5 +90,3 @@ const styles = StyleSheet.create({
     left: "20%",
   },
 });
-
-export default AnimatedBackground;

@@ -1,3 +1,4 @@
+import { UserProvider } from "@/context/UserContext";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
@@ -38,7 +39,11 @@ export default function RootLayout() {
     return null;
   }
 
-  return <RootLayoutNav />;
+  return (
+    <UserProvider>
+      <RootLayoutNav />
+    </UserProvider>
+  );
 }
 
 function RootLayoutNav() {
