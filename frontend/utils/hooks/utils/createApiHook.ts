@@ -1,28 +1,12 @@
 import { useApi } from "./useApi";
 
-type ApiHookOptions<TParams> = {
-  apiCall: (params: TParams) => Promise<void>;
-  errorMessage: string;
-  successMessage: string;
-};
-
-export function createApiHook<TParams>({
-  apiCall,
-  errorMessage,
-  successMessage,
-}: ApiHookOptions<TParams>) {
+export function createApiHook<T, D>(apiCall: (params: T) => Promise<D>) {
   return function useGeneratedApiHook() {
-    const { loading, message, handle, resetMessage } = useApi({
-      apiCall,
-      errorMessage,
-      successMessage,
-    });
+    const { loading, handle } = useApi<T, D>(apiCall);
 
     return {
       loading,
-      message,
       call: handle,
-      resetMessage,
     };
   };
 }

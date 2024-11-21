@@ -1,7 +1,8 @@
 import { View, Text, Animated, Easing } from "react-native";
 import React, { useEffect, useState } from "react";
+import { Colors } from "@/constants/Theme";
 
-export default function LogoLoadingComponent({ size = 100 }: { size?: number }) {
+export function LogoLoadingComponent({ size = 100 }: { size?: number }) {
   const [rotateAnim] = useState(new Animated.Value(0));
   useEffect(() => {
     Animated.loop(
@@ -21,7 +22,7 @@ export default function LogoLoadingComponent({ size = 100 }: { size?: number }) 
         }),
       ])
     ).start();
-  })
+  });
 
   const spin = rotateAnim.interpolate({
     inputRange: [0, 1],
@@ -35,5 +36,20 @@ export default function LogoLoadingComponent({ size = 100 }: { size?: number }) 
         { transform: [{ rotate: spin }] },
       ]}
     />
+  );
+}
+
+export function CenteredLogoLoadingComponent() {
+  return (
+    <View
+      style={{
+        flex: 1,
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: Colors.theme1.background2
+      }}
+    >
+      <LogoLoadingComponent />
+    </View>
   );
 }

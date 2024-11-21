@@ -1,33 +1,16 @@
 import { useState } from "react";
 
-export function useApi<T>({
-  apiCall,
-  successMessage,
-  errorMessage,
-}: {
-  apiCall: (input: T) => Promise<unknown>;
-  successMessage: string;
-  errorMessage: string;
-}) {
+export function useApi<T, D>(apiCall: (input: T) => Promise<D>) {
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState<{
-    text: string;
-    isError: boolean;
-  } | null>(null);
-
-  const resetMessage = () => setMessage(null);
 
   const handle = async (input: T) => {
     setLoading(true);
     try {
-      await apiCall(input);
-      setMessage({ text: successMessage, isError: false });
-    } catch (error: unknown) {
+      const res = await apiCall(input);
+      return res;
+    } catch (error: any) {
       console.error("Error:", JSON.stringify(error));
-      setMessage({
-        text: errorMessage,
-        isError: true,
-      });
+      throw error;
     } finally {
       setLoading(false);
     }
@@ -35,8 +18,6 @@ export function useApi<T>({
 
   return {
     loading,
-    message,
     handle,
-    resetMessage,
   };
 }
