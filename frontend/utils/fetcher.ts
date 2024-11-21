@@ -39,14 +39,6 @@ export const fetcher = async <T>({
   };
 
   try {
-    console.log(
-      `calling url ${url} with ${JSON.stringify({
-        ...options,
-        ...(body && { body }),
-        method,
-        headers: apiHeaders,
-      })}`
-    );
     const response = await fetch(url, {
       ...options,
       ...(body && { body: isFormData ? body : JSON.stringify(body) }),

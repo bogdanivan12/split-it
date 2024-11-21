@@ -110,7 +110,6 @@ export default function Register() {
   );
 
   useEffect(() => {
-    console.log("starting flip animation");
     flipAnim.start();
   }, []);
 
