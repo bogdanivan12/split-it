@@ -12,7 +12,7 @@ from api.api_response_classes import GetRequestsResponseForStatus
 router = APIRouter(prefix="/api/v1/requests", tags=["requests"])
 
 
-@router.get("/requests", status_code=status.HTTP_200_OK,
+@router.get("/", status_code=status.HTTP_200_OK,
             response_model=Dict[models.RequestType,
                                 GetRequestsResponseForStatus])
 async def get_requests(
@@ -48,7 +48,7 @@ async def get_requests(
     return response
 
 
-@router.get("/requests/{request_id}", status_code=status.HTTP_200_OK,
+@router.get("/{request_id}", status_code=status.HTTP_200_OK,
             response_model=models.Request)
 async def get_request(
         request_id: PydanticObjectId,
@@ -81,8 +81,8 @@ async def get_request(
     return request
 
 
-@router.post("/requests/{request_id}/accept",
-             status_code=status.HTTP_200_OK)
+@router.post("/join-group/{request_id}/accept",
+             status_code=status.HTTP_204_NO_CONTENT)
 async def accept_join_group_request(
     request_id: PydanticObjectId,
     user: Annotated[models.User, Depends(users.get_current_user)]
@@ -130,11 +130,9 @@ async def accept_join_group_request(
         raise HTTPException(status_code=status.HTTP_424_FAILED_DEPENDENCY,
                             detail=str(exception))
 
-    return {"detail": "Join request accepted successfully"}
 
-
-@router.post("/requests/{request_id}/decline",
-             status_code=status.HTTP_200_OK)
+@router.post("/{request_id}/decline",
+             status_code=status.HTTP_204_NO_CONTENT)
 async def decline_join_request(
     request_id: PydanticObjectId,
     user: Annotated[models.User, Depends(users.get_current_user)]
@@ -173,10 +171,8 @@ async def decline_join_request(
         raise HTTPException(status_code=status.HTTP_424_FAILED_DEPENDENCY,
                             detail=str(exception))
 
-    return {"detail": "Join request declined"}
 
-
-@router.delete("/requests/{request_id}", status_code=status.HTTP_200_OK)
+@router.delete("/{request_id}", status_code=status.HTTP_200_OK)
 async def delete_join_request(
     request_id: PydanticObjectId,
     user: Annotated[models.User, Depends(users.get_current_user)]
@@ -202,16 +198,8 @@ async def delete_join_request(
                             detail="You're not authorized to delete "
                                    "this request")
 
-    if request.status not in [models.RequestStatus.DECLINED,
-                              models.RequestStatus.ACCEPTED]:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
-                            detail="Only requests with status "
-                                   "DECLINED or ACCEPTED can be deleted")
-
     try:
         db["requests"].delete_one({"_id": request_id})
     except Exception as exception:
         raise HTTPException(status_code=status.HTTP_424_FAILED_DEPENDENCY,
                             detail=str(exception))
-
-    return {"detail": "Join request deleted successfully"}
