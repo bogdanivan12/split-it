@@ -3,9 +3,9 @@ from typing import Annotated, Dict
 from beanie import PydanticObjectId
 from fastapi import APIRouter, Depends, HTTPException
 
-from api import users
 from common import models
 from api.groups import db
+from api import users, api_request_classes
 from api.api_response_classes import GetRequestsResponseForStatus
 
 
@@ -207,27 +207,26 @@ async def delete_request(
 
 @router.post("/invite", status_code=status.HTTP_201_CREATED)
 async def invite_user_to_group(
-        username: str,
-        group_id: PydanticObjectId,
+        request: api_request_classes.InviteToGroupRequest,
         user: Annotated[models.User, Depends(users.get_current_user)]
 ):
     """
     # Send group invite request
     Sends a group invite request to a user and saves it in the database.
     """
-    recipient = db["users"].find_one({"username": username})
+    recipient = db["users"].find_one({"username": request.username})
     if not recipient:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail="User not found")
 
-    if recipient["_id"] in db["groups"].find_one({"_id": group_id})["member_ids"]:
+    if recipient["_id"] in db["groups"].find_one({"_id": request.group_id})["member_ids"]:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
                             detail="User is already a member of the group")
 
     invite_request = models.Request(
         sender_id=user.id,
         recipient_id=recipient["_id"],
-        group_id=group_id,
+        group_id=request.group_id,
         type=models.RequestType.INVITE_TO_GROUP
     )
 
