@@ -1,3 +1,4 @@
+import { AuthProvider } from "@/context/AuthContext";
 import { UserProvider } from "@/context/UserContext";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { useFonts } from "expo-font";
@@ -41,7 +42,9 @@ export default function RootLayout() {
 
   return (
     <UserProvider>
-      <RootLayoutNav />
+      <AuthProvider>
+        <RootLayoutNav />
+      </AuthProvider>
     </UserProvider>
   );
 }

@@ -3,10 +3,10 @@ from typing import Annotated, Dict
 from beanie import PydanticObjectId
 from fastapi import APIRouter, Depends, HTTPException
 
-from api import users
-from common import models
-from api.groups import db
-from api.api_response_classes import GetRequestsResponseForStatus
+from backend.api import users
+from backend.common import models
+from backend.api.groups import db
+from backend.api.api_response_classes import GetRequestsResponseForStatus
 
 
 router = APIRouter(prefix="/api/v1/requests", tags=["requests"])
@@ -24,7 +24,6 @@ async def get_requests(
     """
     try:
         requests = db["requests"].find()
-        print(requests)
     except Exception as exception:
         raise HTTPException(status_code=status.HTTP_424_FAILED_DEPENDENCY,
                             detail=str(exception))

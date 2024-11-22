@@ -6,7 +6,6 @@ export type HTTPMethod = "POST" | "GET" | "PUT" | "DELETE";
 export const fetcher = async <T>({
   endpoint,
   method,
-  token,
   headers,
   body,
   options,
@@ -14,7 +13,6 @@ export const fetcher = async <T>({
 }: {
   endpoint: string;
   method: HTTPMethod;
-  token?: string;
   body?: any;
   contentType?: string;
   headers?: Record<string, string>;
@@ -34,9 +32,10 @@ export const fetcher = async <T>({
   }
   const apiHeaders: HeadersInit = {
     "Content-Type": contentType,
-    ...(token && { Authorization: `Bearer ${token}` }),
     ...(headers || {}),
   };
+
+  console.log(`headers: ${JSON.stringify(apiHeaders)}`)
 
   try {
     const response = await fetch(url, {
