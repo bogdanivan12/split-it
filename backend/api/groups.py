@@ -180,6 +180,9 @@ async def join_group(
     if not group_dict:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail="Invalid join code")
+    if user.id in group_dict["member_ids"]:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT,
+                            detail="You are already a member of the group")
 
     group = models.Group(**group_dict)
     join_request = models.Request(

@@ -96,7 +96,9 @@ class RequestStatus(str, Enum):
 
 class RequestType(str, Enum):
     JOIN_GROUP = "JOIN_GROUP"
+    INVITE_TO_GROUP = "INVITE_TO_GROUP"
     JOIN_MINIGAME = "JOIN_MINIGAME"
+    INVITE_TO_MINIGAME = "INVITE_TO_MINIGAME"
 
 
 class Request(BaseModel):
