@@ -3,9 +3,9 @@ from typing import Annotated, Dict
 from beanie import PydanticObjectId
 from fastapi import APIRouter, Depends, HTTPException
 
-from api import users
 from common import models
 from api.groups import db
+from api import users, api_request_classes
 from api.api_response_classes import GetRequestsResponseForStatus
 
 
@@ -133,12 +133,12 @@ async def accept_join_group_request(
 
 @router.post("/{request_id}/decline",
              status_code=status.HTTP_204_NO_CONTENT)
-async def decline_join_request(
+async def decline_request(
     request_id: PydanticObjectId,
     user: Annotated[models.User, Depends(users.get_current_user)]
 ):
     """
-    # Decline join request
+    # Decline request
     Declines a join request and updates the join request status in the database
     """
     try:
@@ -172,13 +172,13 @@ async def decline_join_request(
                             detail=str(exception))
 
 
-@router.delete("/{request_id}", status_code=status.HTTP_200_OK)
-async def delete_join_request(
+@router.delete("/{request_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_request(
     request_id: PydanticObjectId,
     user: Annotated[models.User, Depends(users.get_current_user)]
 ):
     """
-    # Delete join request
+    # Delete request
     Deletes a join request if its status is DECLINED or ACCEPTED.
     """
     try:
@@ -200,6 +200,90 @@ async def delete_join_request(
 
     try:
         db["requests"].delete_one({"_id": request_id})
+    except Exception as exception:
+        raise HTTPException(status_code=status.HTTP_424_FAILED_DEPENDENCY,
+                            detail=str(exception))
+
+
+@router.post("/invite", status_code=status.HTTP_201_CREATED)
+async def invite_user_to_group(
+        request: api_request_classes.InviteToGroupRequest,
+        user: Annotated[models.User, Depends(users.get_current_user)]
+):
+    """
+    # Send group invite request
+    Sends a group invite request to a user and saves it in the database.
+    """
+    recipient = db["users"].find_one({"username": request.username})
+    if not recipient:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail="User not found")
+
+    if recipient["_id"] in db["groups"].find_one({"_id": request.group_id})["member_ids"]:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail="User is already a member of the group")
+
+    invite_request = models.Request(
+        sender_id=user.id,
+        recipient_id=recipient["_id"],
+        group_id=request.group_id,
+        type=models.RequestType.INVITE_TO_GROUP
+    )
+
+    invite_request_dict = invite_request.model_dump(by_alias=True)
+    invite_request_dict.pop("_id", None)
+
+    try:
+        db["requests"].insert_one(invite_request_dict)
+    except Exception as exception:
+        raise HTTPException(status_code=status.HTTP_424_FAILED_DEPENDENCY,
+                            detail=str(exception))
+
+
+@router.post("/invite/{request_id}/accept",
+             status_code=status.HTTP_204_NO_CONTENT)
+async def accept_group_invite_request(
+        request_id: PydanticObjectId,
+        user: Annotated[models.User, Depends(users.get_current_user)]
+):
+    """
+    # Accept group invite request
+    Accepts a group invite request and updates the receiver's membership status
+    """
+    try:
+        request_dict = db["requests"].find_one({"_id": request_id})
+    except Exception as exception:
+        raise HTTPException(status_code=status.HTTP_424_FAILED_DEPENDENCY,
+                            detail=str(exception))
+
+    if not request_dict:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail="Request not found")
+
+    request = models.Request(**request_dict)
+
+    if request.recipient_id != user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
+                            detail="You're not authorized "
+                                   "to accept this request")
+
+    if request.type != models.RequestType.INVITE_TO_GROUP:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail="Invalid request type")
+
+    try:
+        db["users"].update_one(
+            {"_id": request.recipient_id},
+            {"$addToSet": {"groups": request.group_id}}
+        )
+        db["requests"].update_one(
+            {"_id": request_id},
+            {"$set": {"status": models.RequestStatus.ACCEPTED}}
+        )
+        db["groups"].update_one(
+            {"_id": request.group_id},
+            {"$addToSet": {"member_ids": request.recipient_id}}
+        )
     except Exception as exception:
         raise HTTPException(status_code=status.HTTP_424_FAILED_DEPENDENCY,
                             detail=str(exception))
