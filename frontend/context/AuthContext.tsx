@@ -1,10 +1,12 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useUser } from "./UserContext";
 import { fetcher } from "@/utils/fetcher";
+import { User } from "@/types/User.types";
+import { useAccount } from "@/utils/hooks/useAccount";
 
 type AuthContextType = {
   token: string | null;
+  user: User | null;
   setToken: (token: string | null) => void;
   refreshUser: () => void;
   logout: () => void;
@@ -20,12 +22,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
 
-  const { setUser } = useUser();
+  const { get } = useAccount();
 
   useEffect(() => {
     if (token && token.length > 0) {
-      refreshUser();
+      refreshUser(); 
     }
   }, [token]);
 
@@ -43,11 +46,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     if (!token) return;
     try {
       setLoading(true);
-      const res = await fetcher({
-        endpoint: "/api/v1/users/me/",
-        method: "GET",
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await get(token);
       setLoading(false);
       console.log(res);
     } catch (error) {
@@ -69,6 +68,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     <AuthContext.Provider
       value={{
         token,
+        user,
         setToken,
         logout,
         refreshUser,

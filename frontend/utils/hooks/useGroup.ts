@@ -67,6 +67,25 @@ export const useGroup = () => {
     }
   };
 
+  const getAll = async (token: string) => {
+    try {
+      setLoading(true);
+      const res = await fetcher<GroupApiResponse[]>({
+        endpoint: `/api/v1/groups/`,
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      return res.map(groupMapper);
+    } catch (error) {
+      const err = error as ApiError;
+      throw Error("Could not get groups");
+    } finally {
+      setLoading(true);
+    }
+  };
+
   const update = async (data: UpdateGroupParams, token: string) => {
     try {
       setLoading(true);
@@ -109,6 +128,7 @@ export const useGroup = () => {
 
   return {
     get,
+    getAll,
     update,
     create,
     loading,

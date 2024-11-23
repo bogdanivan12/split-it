@@ -18,6 +18,9 @@ import { FontAwesome } from "@expo/vector-icons";
 import { Colors } from "@/constants/Theme";
 import { generalStyles } from "@/constants/SharedStyles";
 import { router } from "expo-router";
+import { useAccount } from "@/utils/hooks/useAccount";
+import { useAuth } from "@/context/AuthContext";
+import { ApiError } from "@/types/ApiError.types";
 
 const hardcodedUser: User = {
   id: "1",
@@ -54,14 +57,16 @@ const ProfileField = ({
 };
 
 export default function Profile() {
-  const [user, setUser] = useState<User>(hardcodedUser);
-  const [editedUser, setEditedUser] = useState(hardcodedUser);
+  const { logout: logoutUser, token, user, refreshUser } = useAuth();
+  const [editedUser, setEditedUser] = useState(user!);
   const [isEditing, setIsEditing] = useState(false);
   const [actionsBlocked, setActionsBlocked] = useState(false);
 
   const [animPlay, setAnimPlay] = useState(false);
 
   const [scaleAnim] = useState(new Animated.Value(1));
+
+  const { del, update } = useAccount();
   const timeToFlip = 700;
 
   useEffect(() => {
@@ -82,6 +87,13 @@ export default function Profile() {
     ]).start();
   }, [animPlay]);
 
+  useEffect(() => {
+    if (user === null || token === null) {
+      router.replace("/(intro)");
+      return;
+    }
+  }, [user]);
+
   const playAnimationTimeout = (f: () => void) => {
     setAnimPlay(true);
     setActionsBlocked(true);
@@ -98,7 +110,7 @@ export default function Profile() {
     if (actionsBlocked) return;
     playAnimationTimeout(() => {
       setIsEditing((prev) => {
-        if (!prev) setEditedUser(user);
+        if (!prev) setEditedUser(user!);
         return !prev;
       });
     });
@@ -107,7 +119,21 @@ export default function Profile() {
   const handleSave = () => {
     if (actionsBlocked) return;
     playAnimationTimeout(() => {
-      setUser(editedUser);
+      update(
+        {
+          email: editedUser.email,
+          full_name: editedUser.fullName,
+          phone_number: editedUser.phoneNumber,
+          revolut_id: "",
+        },
+        token!
+      )
+        .then(() => refreshUser())
+        .catch((error) => {
+          const err = error as ApiError;
+          console.log(`error when handling save ${JSON.stringify(err)}`);
+        });
+      // some loading icon near, instead of the pen, display the edit while the update is loading
       setIsEditing(false);
     });
   };
@@ -115,18 +141,20 @@ export default function Profile() {
   const cancelEdit = () => {
     if (actionsBlocked) return;
     playAnimationTimeout(() => {
-      setEditedUser(user);
+      setEditedUser(user!);
       setIsEditing(false);
     });
   };
 
   const logout = () => {
     if (actionsBlocked) return;
-    router.replace("/(intro)");
+    logoutUser();
   };
 
-  const deleteAccount = () => {
-    router.replace("/(intro)");
+  const deleteAccount = async () => {
+    if (actionsBlocked) return;
+    await del(token!);
+    logoutUser();
   };
 
   const deleteAccountClick = () => {

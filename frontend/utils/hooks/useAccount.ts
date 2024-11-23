@@ -10,7 +10,7 @@ type UpdateAccountParams = {
   revolut_id: string;
 };
 
-const useAccount = () => {
+export const useAccount = () => {
   const [loading, setLoading] = useState(false);
 
   const update = async (data: UpdateAccountParams, token: string) => {
@@ -23,6 +23,25 @@ const useAccount = () => {
           Authorization: `Bearer ${token}`,
         },
         body: data,
+      });
+      return res;
+    } catch (error) {
+      const err = error as ApiError;
+      throw Error("Could not update account");
+    } finally {
+      setLoading(true);
+    }
+  };
+
+  const get = async (token: string) => {
+    try {
+      setLoading(true);
+      const res = await fetcher<UserApiResponse>({
+        endpoint: `/api/v1/users/me/`,
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       });
       return res;
     } catch (error) {
@@ -55,6 +74,7 @@ const useAccount = () => {
   return {
     update,
     del,
+    get,
     loading,
   };
 };
