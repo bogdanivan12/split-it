@@ -88,11 +88,11 @@ export default function Profile() {
   }, [animPlay]);
 
   useEffect(() => {
-    if (user === null || token === null) {
+    if (!(user && token)) {
       router.replace("/(intro)");
       return;
     }
-  }, [user]);
+  }, [user, token]);
 
   const playAnimationTimeout = (f: () => void) => {
     setAnimPlay(true);

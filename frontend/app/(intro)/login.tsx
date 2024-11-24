@@ -38,7 +38,7 @@ const EMPTY_VALIDATION_FORM = {
 };
 
 export default function Login() {
-  const { setToken } = useAuth();
+  const { setToken, refreshUser } = useAuth();
 
   const [logoOpacity] = useState(new Animated.Value(1));
 
@@ -151,6 +151,8 @@ export default function Login() {
         setMessage({ text: "Success", error: false });
         console.log(res.token);
         setToken(res.token);
+        await refreshUser();
+        router.replace("/(account)");
       } else if (res.validationErrors) {
         setFormValidationErrors(res.validationErrors);
       }

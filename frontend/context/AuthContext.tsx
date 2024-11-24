@@ -8,7 +8,7 @@ type AuthContextType = {
   token: string | null;
   user: User | null;
   setToken: (token: string | null) => void;
-  refreshUser: () => void;
+  refreshUser: () => Promise<void>;
   logout: () => void;
   loading: boolean;
 };
@@ -28,7 +28,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   useEffect(() => {
     if (token && token.length > 0) {
-      refreshUser(); 
+      refreshUser();
     }
   }, [token]);
 
@@ -50,13 +50,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       setLoading(false);
       console.log(res);
     } catch (error) {
-      // display some error here. for now, user is logging out
-      logout();
+      // message like retrieving user failed, pelase try again. alert if error, and if you press ok you get logged out. i can create a component that does this, or an util function
+      throw error;
     }
   };
 
   useEffect(() => {
     loadTokenFromLocalStorage();
+    // if user, redirect to /(account)
   }, []);
 
   const logout = () => {

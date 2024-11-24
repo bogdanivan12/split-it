@@ -13,12 +13,13 @@ import {
   ScrollView,
   Alert,
 } from "react-native";
-import React, { useState } from "react";
-import { Link } from "expo-router";
+import React, { useEffect, useState } from "react";
+import { Link, router } from "expo-router";
 import { FontAwesome, FontAwesome5, FontAwesome6 } from "@expo/vector-icons";
 import { Colors } from "@/constants/Theme";
 import { generalStyles, modalStyles } from "@/constants/SharedStyles";
 import CenteredModal from "@/components/modals/CenteredModal";
+import { useAuth } from "@/context/AuthContext";
 
 interface Group {
   id: string;
@@ -26,15 +27,15 @@ interface Group {
 }
 
 const Groups: React.FC = () => {
-  const [groups, setGroups] = useState<Group[]>([
-    { id: "1", name: "Group1" },
-    { id: "2", name: "Group2" },
-  ]);
   const [modalVisible, setModalVisible] = useState<boolean>(false);
   const [joinModalVisible, setJoinModalVisible] = useState<boolean>(false);
   const [groupName, setGroupName] = useState<string>("");
   const [groupCode, setGroupCode] = useState<string>("");
   const [groupDescription, setGroupDescription] = useState<string>("");
+
+  const { token, user } = useAuth();
+
+  const [groups, setGroups] = useState<Group[]>([]);
 
   const toggleModal = () => {
     setGroupDescription("");
@@ -45,6 +46,14 @@ const Groups: React.FC = () => {
     setGroupCode("");
     setJoinModalVisible((prev) => !prev);
   };
+
+  useEffect(() => {
+    if (!(token && user)) {
+      router.replace("/(intro)");
+      return;
+    }
+    setGroups(user.groupIds.map((g) => ({ id: g, name: "" })));
+  }, []);
 
   const addGroup = () => {
     if (groupName.trim() === "") {
