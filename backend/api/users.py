@@ -192,7 +192,12 @@ def get_user_by_username(username: str):
     # Get user by username
     This endpoint returns the information about a user based on the username.
     """
-    user = db["users"].find_one({"username": username})
+    try:
+        user = db["users"].find_one({"username": username})
+    except Exception as exception:
+        raise HTTPException(status_code=status.HTTP_424_FAILED_DEPENDENCY,
+                            detail=str(exception))
+    
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail="User not found")
