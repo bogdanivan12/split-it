@@ -3,6 +3,9 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { fetcher } from "@/utils/fetcher";
 import { User } from "@/types/User.types";
 import { useAccount } from "@/utils/hooks/useAccount";
+import { router } from "expo-router";
+import { Alert } from "react-native";
+import { ApiError } from "@/types/ApiError.types";
 
 type AuthContextType = {
   token: string | null;
@@ -26,16 +29,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const { get } = useAccount();
 
-  useEffect(() => {
-    if (token && token.length > 0) {
-      refreshUser();
-    }
-  }, [token]);
-
   const loadTokenFromLocalStorage = async () => {
     setLoading(true);
     const storedToken = await AsyncStorage.getItem(TOKEN_STORAGE_KEY);
-    console.log(`stored token: ${storedToken}`);
+    // console.log(`stored token: ${storedToken}`);
     if (storedToken) {
       setToken(storedToken);
     }
@@ -43,22 +40,47 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const refreshUser = async () => {
-    if (!token) return;
+    if (!token) {
+      setUser(null);
+      return;
+    }
     try {
       setLoading(true);
       const res = await get(token);
+      setUser({
+        email: res.email,
+        id: res._id,
+        fullName: res.full_name,
+        groupIds: res.group_ids,
+        phoneNumber: res.phone_number,
+        username: res.username,
+      });
       setLoading(false);
-      console.log(res);
     } catch (error) {
       // message like retrieving user failed, pelase try again. alert if error, and if you press ok you get logged out. i can create a component that does this, or an util function
+      const err = error as ApiError;
+      Alert.prompt("Failed!", "Could not log in. Please try again", logout);
       throw error;
     }
   };
 
   useEffect(() => {
+    if (!token) {
+      router.replace("/(intro)");
+    }
+    console.log("refreshing user");
+    refreshUser();
+  }, [token]);
+
+  useEffect(() => {
     loadTokenFromLocalStorage();
-    // if user, redirect to /(account)
   }, []);
+
+  useEffect(() => {
+    if (user) {
+      router.replace("/(account)");
+    }
+  }, [user]);
 
   const logout = () => {
     setToken(null);

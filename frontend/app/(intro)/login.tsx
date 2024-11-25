@@ -33,12 +33,12 @@ type FormInputProps = {
 };
 
 const EMPTY_VALIDATION_FORM = {
-  username: "",
-  password: "",
+  username: "vladrosuuu",
+  password: "123456",
 };
 
 export default function Login() {
-  const { setToken, refreshUser } = useAuth();
+  const { setToken } = useAuth();
 
   const [logoOpacity] = useState(new Animated.Value(1));
 
@@ -149,10 +149,7 @@ export default function Login() {
       });
       if (!res.validationErrors) {
         setMessage({ text: "Success", error: false });
-        console.log(res.token);
         setToken(res.token);
-        await refreshUser();
-        router.replace("/(account)");
       } else if (res.validationErrors) {
         setFormValidationErrors(res.validationErrors);
       }
@@ -240,7 +237,7 @@ export default function Login() {
                     }
                   />
                   <TouchableOpacity onPress={submit} style={styles.button}>
-                    <Text style={styles.buttonText}>Sign Up</Text>
+                    <Text style={styles.buttonText}>Login</Text>
                   </TouchableOpacity>
                 </View>
               </ScrollView>

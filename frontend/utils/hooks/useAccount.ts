@@ -5,9 +5,9 @@ import { ApiError } from "@/types/ApiError.types";
 
 type UpdateAccountParams = {
   email: string;
-  full_name: string;
-  phone_number: string;
-  revolut_id: string;
+  full_name?: string;
+  phone_number?: string;
+  revolut_id?: string;
 };
 
 export const useAccount = () => {
@@ -17,7 +17,7 @@ export const useAccount = () => {
     try {
       setLoading(true);
       const res = await fetcher<UserApiResponse>({
-        endpoint: `/api/v1/users/me/`,
+        endpoint: `/api/v1/users/me`,
         method: "PUT",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -29,7 +29,7 @@ export const useAccount = () => {
       const err = error as ApiError;
       throw Error("Could not update account");
     } finally {
-      setLoading(true);
+      setLoading(false);
     }
   };
 
@@ -37,7 +37,7 @@ export const useAccount = () => {
     try {
       setLoading(true);
       const res = await fetcher<UserApiResponse>({
-        endpoint: `/api/v1/users/me/`,
+        endpoint: `/api/v1/users/me`,
         method: "GET",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -46,28 +46,28 @@ export const useAccount = () => {
       return res;
     } catch (error) {
       const err = error as ApiError;
-      throw Error("Could not update account");
+      throw Error("Could not get account");
     } finally {
-      setLoading(true);
+      setLoading(false);
     }
   };
 
   const del = async (token: string) => {
     try {
       setLoading(true);
-      const res = await fetcher<UserApiResponse>({
-        endpoint: `/api/v1/users/me/`,
+      await fetcher({
+        endpoint: `/api/v1/users/me`,
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
-      return res;
+      return;
     } catch (error) {
       const err = error as ApiError;
       throw Error("Could not delete account");
     } finally {
-      setLoading(true);
+      setLoading(false);
     }
   };
 

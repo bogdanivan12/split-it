@@ -35,8 +35,6 @@ export const fetcher = async <T>({
     ...(headers || {}),
   };
 
-  console.log(`headers: ${JSON.stringify(apiHeaders)}`)
-
   try {
     const response = await fetch(url, {
       ...options,
@@ -52,9 +50,10 @@ export const fetcher = async <T>({
         error instanceof String ? { error: error } : error
       );
     }
+    if (response.status === 204) return {} as any;
     return await response.json();
   } catch (error: any) {
-    console.error("Fetch error:", JSON.stringify(error));
+    console.error("Fetch error:", error.message);
     if (error instanceof ApiError) throw error;
     throw new ApiError(500, { error: "Internal server error." });
   }

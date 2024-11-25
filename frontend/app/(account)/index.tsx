@@ -21,6 +21,10 @@ import { router } from "expo-router";
 import { useAccount } from "@/utils/hooks/useAccount";
 import { useAuth } from "@/context/AuthContext";
 import { ApiError } from "@/types/ApiError.types";
+import {
+  CenteredLogoLoadingComponent,
+  LogoLoadingComponent,
+} from "@/components/LogoLoadingComponent";
 
 const hardcodedUser: User = {
   id: "1",
@@ -66,7 +70,7 @@ export default function Profile() {
 
   const [scaleAnim] = useState(new Animated.Value(1));
 
-  const { del, update } = useAccount();
+  const { del, update, loading } = useAccount();
   const timeToFlip = 700;
 
   useEffect(() => {
@@ -124,7 +128,6 @@ export default function Profile() {
           email: editedUser.email,
           full_name: editedUser.fullName,
           phone_number: editedUser.phoneNumber,
-          revolut_id: "",
         },
         token!
       )
@@ -157,7 +160,7 @@ export default function Profile() {
     logoutUser();
   };
 
-  const deleteAccountClick = () => {
+  const deleteAccountClick = async () => {
     if (actionsBlocked) return;
     Alert.alert(
       "Delete account",
@@ -168,7 +171,10 @@ export default function Profile() {
           onPress: () => {},
           style: "cancel",
         },
-        { text: "YES, DELETE MY ACCOUNT", onPress: () => deleteAccount() },
+        {
+          text: "YES, DELETE MY ACCOUNT",
+          onPress: async () => await deleteAccount(),
+        },
       ]
     );
   };
@@ -177,6 +183,8 @@ export default function Profile() {
     inputRange: [0, 1],
     outputRange: [0, 1],
   });
+
+  if (!(user && token)) return <CenteredLogoLoadingComponent />;
 
   return (
     <TouchableWithoutFeedback
@@ -193,7 +201,7 @@ export default function Profile() {
         >
           <View style={styles.header}>
             <Text style={styles.title}>Profile</Text>
-            {!isEditing && (
+            {!isEditing && !loading && (
               <TouchableOpacity onPress={handleEditToggle}>
                 <FontAwesome
                   name="pencil"
@@ -202,6 +210,7 @@ export default function Profile() {
                 />
               </TouchableOpacity>
             )}
+            {!isEditing && loading && <LogoLoadingComponent size={24} />}
           </View>
           <ScrollView
             contentContainerStyle={generalStyles.scrollContainer}
@@ -234,9 +243,12 @@ export default function Profile() {
               name="Full Name"
               onChange={(text) =>
                 !actionsBlocked &&
-                setEditedUser({ ...editedUser, fullName: text })
+                setEditedUser({
+                  ...editedUser,
+                  ...(text.trim().length > 0 && { fullName: text }),
+                })
               }
-              value={editedUser.fullName}
+              value={editedUser.fullName || ""}
             />
 
             <ProfileField
@@ -247,12 +259,12 @@ export default function Profile() {
                 setEditedUser(
                   {
                     ...editedUser,
-                    phoneNumber: text,
+                    ...(text.trim().length > 0 && { phoneNumber: text }),
                   }
                   // verify phone number mechanism
                 )
               }
-              value={editedUser.phoneNumber}
+              value={editedUser.phoneNumber || ""}
             />
 
             {isEditing && (

@@ -63,7 +63,7 @@ export const useGroup = () => {
       const err = error as ApiError;
       throw Error("Could not get group");
     } finally {
-      setLoading(true);
+      setLoading(false);
     }
   };
 
@@ -82,7 +82,7 @@ export const useGroup = () => {
       const err = error as ApiError;
       throw Error("Could not get groups");
     } finally {
-      setLoading(true);
+      setLoading(false);
     }
   };
 
@@ -102,7 +102,7 @@ export const useGroup = () => {
       const err = error as ApiError;
       throw Error("Could not update group");
     } finally {
-      setLoading(true);
+      setLoading(false);
     }
   };
 
@@ -122,7 +122,7 @@ export const useGroup = () => {
       const err = error as ApiError;
       throw Error("Could not create group");
     } finally {
-      setLoading(true);
+      setLoading(false);
     }
   };
 

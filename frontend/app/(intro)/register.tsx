@@ -33,10 +33,10 @@ type FormInputProps = {
 };
 
 const EMPTY_VALIDATION_FORM = {
-  username: "",
-  password: "",
-  confirmPassword: "",
-  email: "",
+  username: "vladrosuuu",
+  password: "123456",
+  confirmPassword: "123456",
+  email: "vladd@gmail.com",
 };
 
 export default function Register() {
