@@ -62,7 +62,6 @@ def get_current_user(token: Annotated[str, Depends(auth.oauth2_scheme)]):
     on the access token.
     """
     try:
-        print(token, flush=True)
         payload = jwt.decode(token, config_info.HASH_KEY, algorithms=["HS256"])
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,

@@ -21,3 +21,8 @@ class UpdateGroupRequest(BaseModel):
     owner_id: Optional[PydanticObjectId] = Field(default=None)
     member_ids: Optional[List[PydanticObjectId]] = Field(default_factory=list)
     bill_ids: Optional[List[PydanticObjectId]] = Field(default_factory=list)
+
+
+class InviteToGroupRequest(BaseModel):
+    username: str = Field(min_length=5, max_length=20)
+    group_id: PydanticObjectId
