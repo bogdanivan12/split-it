@@ -24,11 +24,8 @@ import { useGroup } from "@/utils/hooks/useGroup";
 import { Message } from "@/components/Message";
 import { ErrorIcon, SuccessIcon } from "@/components/Icons";
 import { useIsFocused } from "@react-navigation/native";
-
-interface Group {
-  id: string;
-  name: string;
-}
+import { CenteredLogoLoadingComponent } from "@/components/LogoLoadingComponent";
+import { Group, ShortGroup } from "@/types/Group.types";
 
 const Groups: React.FC = () => {
   const [modalVisible, setModalVisible] = useState<boolean>(false);
@@ -36,6 +33,7 @@ const Groups: React.FC = () => {
   const [groupName, setGroupName] = useState<string>("");
   const [groupCode, setGroupCode] = useState<string>("");
   const [groupDescription, setGroupDescription] = useState<string>("");
+  const [groups, setGroups] = useState<ShortGroup[]>([]);
 
   const [message, setMessage] = useState<{
     error: boolean;
@@ -44,11 +42,23 @@ const Groups: React.FC = () => {
 
   const isFocused = useIsFocused();
   const { token, user, refreshUser } = useAuth();
-  const { create, loading } = useGroup();
+  const { create, loading, getAll } = useGroup();
 
   useEffect(() => {
     setMessage(null);
   }, [isFocused]);
+
+  useEffect(() => {
+    const f = async () => {
+      try {
+        const groups = await getAll(token!);
+        setGroups(groups);
+      } catch (err: any) {
+        setMessage({ error: true, text: err.message });
+      }
+    };
+    f();
+  }, [user]);
 
   const toggleModal = () => {
     setGroupDescription("");
@@ -102,30 +112,35 @@ const Groups: React.FC = () => {
     }
   };
 
+  if (!user) return null;
+
   return (
     <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
       <View
         style={{
-          ...generalStyles.scrollContainer,
           backgroundColor: styles.container.backgroundColor,
+          ...generalStyles.scrollContainer
         }}
       >
-        <ScrollView contentContainerStyle={generalStyles.scrollContainer}>
+        <ScrollView
+          contentContainerStyle={{
+            ...generalStyles.scrollContainer,
+            paddingBottom: 100,
+          }}
+        >
           <View onStartShouldSetResponder={() => true} style={styles.container}>
             <View style={styles.absoluteFill} />
             <Text style={styles.header}>
               Which group are you tricking today?
             </Text>
-            <FlatList
-              data={user!.groupIds}
-              scrollEnabled={false}
-              keyExtractor={(item) => item}
-              renderItem={({ item }) => (
+            <View style={styles.groupList}>
+              {groups.map((grp) => (
                 <Link
+                  key={grp.id}
                   asChild
                   href={{
                     pathname: `/(group)`,
-                    params: { id: item.toLowerCase() },
+                    params: { id: grp.id.toLowerCase() },
                   }}
                 >
                   <Pressable style={styles.button}>
@@ -134,13 +149,11 @@ const Groups: React.FC = () => {
                       size={20}
                       color={Colors.theme1.text3}
                     />
-                    <Text style={styles.text}>{`${item}`}</Text>
+                    <Text style={styles.text}>{`${grp.name}`}</Text>
                   </Pressable>
                 </Link>
-              )}
-              style={styles.groupList}
-            />
-
+              ))}
+            </View>
             <TouchableOpacity style={styles.addButton} onPress={toggleModal}>
               <View style={styles.addButtonContent}>
                 <FontAwesome
@@ -165,52 +178,74 @@ const Groups: React.FC = () => {
                 <Text style={styles.addButtonText}>Join Group</Text>
               </View>
             </TouchableOpacity>
+            {message && (
+              <Message
+                containerStyle={{ alignSelf: "center", marginTop: 10 }}
+                style={{ textAlign: "center" }}
+                text={message.text}
+                color={
+                  message.error
+                    ? Colors.theme1.textReject
+                    : Colors.theme1.textAccept
+                }
+                icon={message.error ? ErrorIcon : SuccessIcon}
+              />
+            )}
             <CenteredModal onClose={toggleModal} visible={modalVisible}>
               <View style={modalStyles.modalContainer}>
                 <Text style={modalStyles.modalTitle}>Create New Group</Text>
-                <ScrollView
-                  contentContainerStyle={{
-                    ...generalStyles.scrollContainer,
-                    justifyContent: "flex-start",
-                  }}
-                >
-                  <View
-                    style={{ marginTop: 10 }}
-                    onStartShouldSetResponder={() => true}
+                {loading ? (
+                  <CenteredLogoLoadingComponent
+                    backgroundColor={Colors.theme1.background1}
+                  />
+                ) : (
+                  <ScrollView
+                    contentContainerStyle={{
+                      ...generalStyles.scrollContainer,
+                      justifyContent: "flex-start",
+                    }}
                   >
-                    <TextInput
-                      style={modalStyles.input}
-                      placeholder="Group Name (required)"
-                      value={groupName}
-                      onChangeText={setGroupName}
-                      placeholderTextColor={Colors.theme1.inputPlaceholder}
-                    />
-
-                    <TextInput
-                      style={[modalStyles.input, modalStyles.descriptionInput]}
-                      placeholder="Group Description (optional)"
-                      value={groupDescription}
-                      onChangeText={setGroupDescription}
-                      placeholderTextColor={Colors.theme1.inputPlaceholder}
-                      multiline
-                    />
-                  </View>
-
-                  <View style={modalStyles.modalActions}>
-                    <TouchableOpacity
-                      style={modalStyles.modalButton}
-                      onPress={toggleModal}
+                    <View
+                      style={{ marginTop: 10 }}
+                      onStartShouldSetResponder={() => true}
                     >
-                      <Text style={modalStyles.modalButtonText}>Cancel</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={modalStyles.modalButton}
-                      onPress={addGroup}
-                    >
-                      <Text style={modalStyles.modalButtonText}>Create</Text>
-                    </TouchableOpacity>
-                  </View>
-                </ScrollView>
+                      <TextInput
+                        style={modalStyles.input}
+                        placeholder="Group Name (required)"
+                        value={groupName}
+                        onChangeText={setGroupName}
+                        placeholderTextColor={Colors.theme1.inputPlaceholder}
+                      />
+
+                      <TextInput
+                        style={[
+                          modalStyles.input,
+                          modalStyles.descriptionInput,
+                        ]}
+                        placeholder="Group Description (optional)"
+                        value={groupDescription}
+                        onChangeText={setGroupDescription}
+                        placeholderTextColor={Colors.theme1.inputPlaceholder}
+                        multiline
+                      />
+                    </View>
+
+                    <View style={modalStyles.modalActions}>
+                      <TouchableOpacity
+                        style={modalStyles.modalButton}
+                        onPress={toggleModal}
+                      >
+                        <Text style={modalStyles.modalButtonText}>Cancel</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={modalStyles.modalButton}
+                        onPress={addGroup}
+                      >
+                        <Text style={modalStyles.modalButtonText}>Create</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </ScrollView>
+                )}
               </View>
             </CenteredModal>
             <CenteredModal onClose={toggleJoinModal} visible={joinModalVisible}>
@@ -256,19 +291,6 @@ const Groups: React.FC = () => {
             </CenteredModal>
           </View>
         </ScrollView>
-        {message && (
-          <Message
-            containerStyle={{ alignSelf: "center" }}
-            style={{ textAlign: "center" }}
-            text={message.text}
-            color={
-              message.error
-                ? Colors.theme1.textReject
-                : Colors.theme1.textAccept
-            }
-            icon={message.error ? ErrorIcon : SuccessIcon}
-          />
-        )}
       </View>
     </TouchableWithoutFeedback>
   );

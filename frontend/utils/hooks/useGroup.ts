@@ -9,6 +9,7 @@ type CreateGroupParams = {
 };
 
 type UpdateGroupParams = {
+  _id: string;
   name: string;
   description: string;
   owner_id: string;
@@ -26,20 +27,32 @@ type GroupApiResponse = {
   join_code: string;
 };
 
-const groupMapper = (res: GroupApiResponse): Group => {
+type GroupUsersApiResponse = {
+  _id: string;
+  full_name: string;
+  username: string;
+};
+
+const groupMapper = (
+  res: GroupApiResponse,
+  usersRes: GroupUsersApiResponse[]
+): Group => {
+  const owner = usersRes.find((m) => m._id === res.owner_id)!;
   return {
     id: res._id,
     description: res.description,
-    members: res.member_ids.map((m) => ({
-      fullName: "",
-      id: m,
-      username: "",
-    })),
+    members: usersRes
+      .filter((m) => m._id !== res.owner_id)
+      .map((m) => ({
+        fullName: m.full_name,
+        id: m._id,
+        username: m.username,
+      })),
     name: res.name,
     owner: {
-      fullName: "",
+      fullName: owner.full_name,
       id: res.owner_id,
-      username: "",
+      username: owner.username,
     },
     pendingMembers: [],
   };
@@ -47,6 +60,16 @@ const groupMapper = (res: GroupApiResponse): Group => {
 
 export const useGroup = () => {
   const [loading, setLoading] = useState(false);
+
+  const getUsersInGroup = async (id: string, token: string) => {
+    return await fetcher<GroupUsersApiResponse[]>({
+      endpoint: `/api/v1/groups/${id}/users`,
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  };
 
   const get = async (id: string, token: string) => {
     try {
@@ -58,7 +81,10 @@ export const useGroup = () => {
           Authorization: `Bearer ${token}`,
         },
       });
-      return groupMapper(res);
+
+      const usersRes = await getUsersInGroup(id, token);
+
+      return groupMapper(res, usersRes);
     } catch (error) {
       const err = error as ApiError;
       throw Error("Could not get group");
@@ -77,7 +103,7 @@ export const useGroup = () => {
           Authorization: `Bearer ${token}`,
         },
       });
-      return res.map(groupMapper);
+      return res.map((g) => ({ id: g._id, name: g.name }));
     } catch (error) {
       const err = error as ApiError;
       throw Error("Could not get groups");
@@ -90,14 +116,15 @@ export const useGroup = () => {
     try {
       setLoading(true);
       const res = await fetcher<GroupApiResponse>({
-        endpoint: "/api/v1/groups/",
+        endpoint: `/api/v1/groups/${data._id}`,
         method: "PUT",
         headers: {
           Authorization: `Bearer ${token}`,
         },
         body: data,
       });
-      return groupMapper(res);
+      const usersRes = await getUsersInGroup(data._id, token);
+      return groupMapper(res, usersRes);
     } catch (error) {
       const err = error as ApiError;
       throw Error("Could not update group");

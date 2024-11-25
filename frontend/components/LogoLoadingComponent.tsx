@@ -39,14 +39,18 @@ export function LogoLoadingComponent({ size = 100 }: { size?: number }) {
   );
 }
 
-export function CenteredLogoLoadingComponent() {
+export function CenteredLogoLoadingComponent({
+  backgroundColor = Colors.theme1.background2,
+}: {
+  backgroundColor?: string;
+}) {
   return (
     <View
       style={{
         flex: 1,
         alignItems: "center",
         justifyContent: "center",
-        backgroundColor: Colors.theme1.background2
+        backgroundColor: backgroundColor,
       }}
     >
       <LogoLoadingComponent />

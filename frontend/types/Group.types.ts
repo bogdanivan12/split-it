@@ -12,3 +12,8 @@ export type Group = {
   members: UserInGroup[];
   pendingMembers: UserInGroup[];
 };
+
+export type ShortGroup = {
+  id: string;
+  name: string;
+};

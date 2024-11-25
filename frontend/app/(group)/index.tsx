@@ -8,57 +8,37 @@ import {
   TextInput,
   Alert,
 } from "react-native";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Colors } from "@/constants/Theme";
-import { Group as GroupType } from "@/types/Group.types";
+import { Group as GroupType, UserInGroup } from "@/types/Group.types";
 import { Entypo, FontAwesome } from "@expo/vector-icons";
 import CenteredModal from "@/components/modals/CenteredModal";
 import { generalStyles, modalStyles } from "@/constants/SharedStyles";
 import { InviteModal } from "@/components/modals/InviteModal";
-
-const gd: GroupType = {
-  id: "group1",
-  name: "Group1",
-  description: "This is a description for Group1.",
-  owner: {
-    fullName: "Vlad Rosu",
-    id: "1",
-    username: "vlandero",
-  },
-  members: [
-    {
-      fullName: "Anelis",
-      id: "2",
-      username: "anelis123",
-    },
-    {
-      fullName: "Bogdan",
-      id: "3",
-      username: "scrum_master",
-    },
-    {
-      fullName: "Octavian",
-      id: "4",
-      username: "nitoiu",
-    },
-  ],
-  pendingMembers: [
-    {
-      fullName: "Octavian2",
-      id: "5",
-      username: "nitoiu2",
-    },
-  ],
-};
+import { useAuth } from "@/context/AuthContext";
+import { useGroup } from "@/utils/hooks/useGroup";
+import { router, useGlobalSearchParams } from "expo-router";
+import { CenteredLogoLoadingComponent } from "@/components/LogoLoadingComponent";
 
 const Group: React.FC = () => {
-  const [isAdmin, setIsAdmin] = useState(true);
+  const { user, token, refreshUser } = useAuth();
+  const { get, loading, update } = useGroup();
+  const { id } = useGlobalSearchParams();
+  const [groupId] = useState(id as string);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
-  const [groupDetails, setGroupDetails] = useState(gd);
+  const [groupDetails, setGroupDetails] = useState<GroupType>({
+    description: "",
+    id: "",
+    members: [],
+    name: "",
+    owner: {} as UserInGroup,
+    pendingMembers: [],
+  });
   const [editedDetails, setEditedDetails] = useState({
-    name: gd.name,
-    description: gd.description,
+    name: "",
+    description: "",
   });
   const accept = (member: string) => {};
   const reject = (member: string) => {};
@@ -69,7 +49,7 @@ const Group: React.FC = () => {
     });
     setEditModalOpen(true);
   };
-  const save = () => {
+  const save = async () => {
     if (editedDetails.name.trim() === "") {
       Alert.alert("Required", "The name is required for a group", [
         {
@@ -80,16 +60,61 @@ const Group: React.FC = () => {
       ]);
       return;
     }
-    setEditModalOpen(false);
+    try {
+      await update(
+        {
+          _id: groupDetails.id,
+          bill_ids: [],
+          description: editedDetails.description,
+          member_ids: groupDetails.members
+            .map((m) => m.id)
+            .concat(groupDetails.owner.id),
+          name: editedDetails.name,
+          owner_id: groupDetails.owner.id,
+        },
+        token!
+      );
+      await refreshUser();
+      setEditModalOpen(false);
+    } catch (error: any) {
+      Alert.prompt("Error", error.message);
+    }
     setGroupDetails((prev) => ({
       ...prev,
       description: editedDetails.description,
       name: editedDetails.name,
     }));
   };
+
+  useEffect(() => {
+    if (!groupId) {
+      router.replace("/(account)");
+      return;
+    }
+    const f = async () => {
+      try {
+        const gr = await get(groupId, token!);
+        setIsAdmin(gr.owner.id === user!.id);
+        console.log(`setting groups ${JSON.stringify(gr)}`);
+        setGroupDetails(gr);
+      } catch (err) {
+        router.replace("/(account)");
+      }
+    };
+    f();
+  }, [user]);
+
+  useEffect(() => {
+    if (groupDetails)
+      setEditedDetails({
+        name: groupDetails.name,
+        description: groupDetails.description,
+      });
+  }, [groupDetails]);
   const discard = () => {
     setEditModalOpen(false);
   };
+  if (loading && !editModalOpen) return <CenteredLogoLoadingComponent />;
   return (
     <View style={styles.container}>
       {isAdmin && (
@@ -99,53 +124,57 @@ const Group: React.FC = () => {
         >
           <View style={modalStyles.modalContainer}>
             <Text style={modalStyles.modalTitle}>Edit group information</Text>
-            <ScrollView
-              contentContainerStyle={{
-                ...generalStyles.scrollContainer,
-                justifyContent: "flex-start",
-              }}
-            >
-              <View
-                style={{ marginTop: 10 }}
-                onStartShouldSetResponder={() => true}
+            {editModalOpen && loading ? (
+              <CenteredLogoLoadingComponent />
+            ) : (
+              <ScrollView
+                contentContainerStyle={{
+                  ...generalStyles.scrollContainer,
+                  justifyContent: "flex-start",
+                }}
               >
-                <TextInput
-                  style={generalStyles.input}
-                  placeholder="Group Name (required)"
-                  value={editedDetails.name}
-                  onChangeText={(i) =>
-                    setEditedDetails((prev) => ({ ...prev, name: i }))
-                  }
-                  placeholderTextColor={Colors.theme1.inputPlaceholder}
-                />
-
-                <TextInput
-                  style={[modalStyles.input, modalStyles.descriptionInput]}
-                  placeholder="Group Description (optional)"
-                  value={editedDetails.description}
-                  onChangeText={(i) =>
-                    setEditedDetails((prev) => ({ ...prev, description: i }))
-                  }
-                  placeholderTextColor={Colors.theme1.inputPlaceholder}
-                  multiline
-                />
-              </View>
-
-              <View style={modalStyles.modalActions}>
-                <TouchableOpacity
-                  style={modalStyles.modalButton}
-                  onPress={discard}
+                <View
+                  style={{ marginTop: 10 }}
+                  onStartShouldSetResponder={() => true}
                 >
-                  <Text style={modalStyles.modalButtonText}>Cancel</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={modalStyles.modalButton}
-                  onPress={save}
-                >
-                  <Text style={modalStyles.modalButtonText}>Save</Text>
-                </TouchableOpacity>
-              </View>
-            </ScrollView>
+                  <TextInput
+                    style={generalStyles.input}
+                    placeholder="Group Name (required)"
+                    value={editedDetails.name}
+                    onChangeText={(i) =>
+                      setEditedDetails((prev) => ({ ...prev, name: i }))
+                    }
+                    placeholderTextColor={Colors.theme1.inputPlaceholder}
+                  />
+
+                  <TextInput
+                    style={[modalStyles.input, modalStyles.descriptionInput]}
+                    placeholder="Group Description (optional)"
+                    value={editedDetails.description}
+                    onChangeText={(i) =>
+                      setEditedDetails((prev) => ({ ...prev, description: i }))
+                    }
+                    placeholderTextColor={Colors.theme1.inputPlaceholder}
+                    multiline
+                  />
+                </View>
+
+                <View style={modalStyles.modalActions}>
+                  <TouchableOpacity
+                    style={modalStyles.modalButton}
+                    onPress={discard}
+                  >
+                    <Text style={modalStyles.modalButtonText}>Cancel</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={modalStyles.modalButton}
+                    onPress={save}
+                  >
+                    <Text style={modalStyles.modalButtonText}>Save</Text>
+                  </TouchableOpacity>
+                </View>
+              </ScrollView>
+            )}
           </View>
         </CenteredModal>
       )}
