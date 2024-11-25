@@ -99,7 +99,7 @@ async def update_user(
         raise HTTPException(status_code=status.HTTP_409_CONFLICT,
                             detail="Phone number already exists")
 
-    user_update_dict = user.model_dump(exclude_unset=True)
+    user_update_dict = request.model_dump(exclude_unset=True)
     user_dict = user.model_dump()
     if not any(user_update_dict[field] != user_dict[field]
                for field in user_update_dict):
@@ -119,7 +119,7 @@ async def update_user(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail="User not found")
 
-    user_dict.update(user_update_dict)
+    user_dict = db["users"].find_one({"_id": user.id})
     user = models.User(**user_dict)
     return user
 
