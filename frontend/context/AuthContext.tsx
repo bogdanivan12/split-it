@@ -60,7 +60,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       // message like retrieving user failed, pelase try again. alert if error, and if you press ok you get logged out. i can create a component that does this, or an util function
       const err = error as ApiError;
       Alert.prompt("Failed!", "Could not log in. Please try again", logout);
-      throw error;
+      throw Error("Could not refresh user.");
     }
   };
 

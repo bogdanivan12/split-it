@@ -20,6 +20,10 @@ import { Colors } from "@/constants/Theme";
 import { generalStyles, modalStyles } from "@/constants/SharedStyles";
 import CenteredModal from "@/components/modals/CenteredModal";
 import { useAuth } from "@/context/AuthContext";
+import { useGroup } from "@/utils/hooks/useGroup";
+import { Message } from "@/components/Message";
+import { ErrorIcon, SuccessIcon } from "@/components/Icons";
+import { useIsFocused } from "@react-navigation/native";
 
 interface Group {
   id: string;
@@ -33,9 +37,18 @@ const Groups: React.FC = () => {
   const [groupCode, setGroupCode] = useState<string>("");
   const [groupDescription, setGroupDescription] = useState<string>("");
 
-  const { token, user } = useAuth();
+  const [message, setMessage] = useState<{
+    error: boolean;
+    text: string;
+  } | null>(null);
 
-  const [groups, setGroups] = useState<Group[]>([]);
+  const isFocused = useIsFocused();
+  const { token, user, refreshUser } = useAuth();
+  const { create, loading } = useGroup();
+
+  useEffect(() => {
+    setMessage(null);
+  }, [isFocused]);
 
   const toggleModal = () => {
     setGroupDescription("");
@@ -47,15 +60,7 @@ const Groups: React.FC = () => {
     setJoinModalVisible((prev) => !prev);
   };
 
-  useEffect(() => {
-    if (!(token && user)) {
-      router.replace("/(intro)");
-      return;
-    }
-    setGroups(user.groupIds.map((g) => ({ id: g, name: "" })));
-  }, []);
-
-  const addGroup = () => {
+  const addGroup = async () => {
     if (groupName.trim() === "") {
       Alert.alert("Required", "The name is required to create a group", [
         {
@@ -66,13 +71,21 @@ const Groups: React.FC = () => {
       ]);
       return;
     }
-
-    const newGroup: Group = {
-      id: `${groups.length + 1}`,
-      name: groupName.trim(),
-    };
-
-    setGroups([...groups, newGroup]);
+    try {
+      await create(
+        {
+          name: groupName,
+          description: groupDescription,
+        },
+        token!
+      );
+      setMessage({ error: false, text: "Group created successfully." });
+      refreshUser().catch((err) =>
+        setMessage({ error: true, text: err.message })
+      );
+    } catch (err: any) {
+      setMessage({ error: true, text: err.message });
+    }
     toggleModal();
   };
 
@@ -104,15 +117,15 @@ const Groups: React.FC = () => {
               Which group are you tricking today?
             </Text>
             <FlatList
-              data={groups}
+              data={user!.groupIds}
               scrollEnabled={false}
-              keyExtractor={(item) => item.id}
+              keyExtractor={(item) => item}
               renderItem={({ item }) => (
                 <Link
                   asChild
                   href={{
                     pathname: `/(group)`,
-                    params: { id: item.name.toLowerCase() },
+                    params: { id: item.toLowerCase() },
                   }}
                 >
                   <Pressable style={styles.button}>
@@ -121,7 +134,7 @@ const Groups: React.FC = () => {
                       size={20}
                       color={Colors.theme1.text3}
                     />
-                    <Text style={styles.text}>{`${item.name}`}</Text>
+                    <Text style={styles.text}>{`${item}`}</Text>
                   </Pressable>
                 </Link>
               )}
@@ -243,6 +256,19 @@ const Groups: React.FC = () => {
             </CenteredModal>
           </View>
         </ScrollView>
+        {message && (
+          <Message
+            containerStyle={{ alignSelf: "center" }}
+            style={{ textAlign: "center" }}
+            text={message.text}
+            color={
+              message.error
+                ? Colors.theme1.textReject
+                : Colors.theme1.textAccept
+            }
+            icon={message.error ? ErrorIcon : SuccessIcon}
+          />
+        )}
       </View>
     </TouchableWithoutFeedback>
   );
