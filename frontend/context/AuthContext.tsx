@@ -6,6 +6,7 @@ import { useAccount } from "@/utils/hooks/useAccount";
 import { router } from "expo-router";
 import { Alert } from "react-native";
 import { ApiError } from "@/types/ApiError.types";
+import { useRouteInfo } from "expo-router/build/hooks";
 
 type AuthContextType = {
   token: string | null;
@@ -23,6 +24,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
+  const route = useRouteInfo();
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState<User | null>(null);
@@ -60,7 +62,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       // message like retrieving user failed, pelase try again. alert if error, and if you press ok you get logged out. i can create a component that does this, or an util function
       const err = error as ApiError;
       Alert.prompt("Failed!", "Could not log in. Please try again", logout);
-      throw error;
+      throw Error("Could not refresh user.");
     }
   };
 
@@ -78,7 +80,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   useEffect(() => {
     if (user) {
-      router.replace("/(account)");
+      console.log(route.pathname);
+      if (["/login", "/register", "/(intro)"].includes(route.pathname))
+        router.replace("/(account)");
     }
   }, [user]);
 

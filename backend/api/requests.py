@@ -3,7 +3,7 @@ from typing import Annotated, Dict
 from beanie import PydanticObjectId
 from fastapi import APIRouter, Depends, HTTPException
 
-from common import models
+from backend.common import models
 from backend.api.groups import db
 from backend.api import users, api_request_classes
 from backend.api.api_response_classes import GetRequestsResponseForStatus

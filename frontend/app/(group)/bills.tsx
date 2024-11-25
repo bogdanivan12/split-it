@@ -10,7 +10,6 @@ import React from "react";
 import { Link } from "expo-router";
 import { Colors } from "@/constants/Theme";
 import { Bill } from "@/types/Bill.types";
-import { generalStyles } from "@/constants/SharedStyles";
 
 const billsData: Bill[] = [
   { id: "1", name: "Electricity", amount: "$120", dateCreated: "2023-12-01" },

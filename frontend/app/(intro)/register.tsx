@@ -24,6 +24,7 @@ import {
 import { Feather, MaterialIcons } from "@expo/vector-icons";
 import { Colors } from "@/constants/Theme";
 import { Message } from "@/components/Message";
+import { ErrorIcon, SuccessIcon } from "@/components/Icons";
 
 type FormInputProps = {
   username: string;
@@ -156,14 +157,6 @@ export default function Register() {
       setMessage({ error: true, text: error.message });
     }
   };
-
-  const ErrorIcon = (
-    <MaterialIcons size={20} color={Colors.theme1.textReject} name="error" />
-  );
-
-  const SuccessIcon = (
-    <Feather name="check-circle" color={Colors.theme1.textAccept} size={20} />
-  );
 
   if (loading) {
     return <CenteredLogoLoadingComponent />;

@@ -24,6 +24,11 @@ class UserInDB(User):
     hashed_password: str
 
 
+class UserSummary(BaseModel):
+    id: PydanticObjectId = Field(alias="_id")
+    username: str
+    full_name: Optional[str]
+
 class Group(BaseModel):
     id: Optional[PydanticObjectId] = Field(alias="_id", default=None)
     name: str = Field(min_length=5, max_length=30)
