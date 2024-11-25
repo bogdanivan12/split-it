@@ -18,6 +18,13 @@ import { FontAwesome } from "@expo/vector-icons";
 import { Colors } from "@/constants/Theme";
 import { generalStyles } from "@/constants/SharedStyles";
 import { router } from "expo-router";
+import { useAccount } from "@/utils/hooks/useAccount";
+import { useAuth } from "@/context/AuthContext";
+import { ApiError } from "@/types/ApiError.types";
+import {
+  CenteredLogoLoadingComponent,
+  LogoLoadingComponent,
+} from "@/components/LogoLoadingComponent";
 
 const hardcodedUser: User = {
   id: "1",
@@ -54,14 +61,16 @@ const ProfileField = ({
 };
 
 export default function Profile() {
-  const [user, setUser] = useState<User>(hardcodedUser);
-  const [editedUser, setEditedUser] = useState(hardcodedUser);
+  const { logout: logoutUser, token, user, refreshUser } = useAuth();
+  const [editedUser, setEditedUser] = useState(user!);
   const [isEditing, setIsEditing] = useState(false);
   const [actionsBlocked, setActionsBlocked] = useState(false);
 
   const [animPlay, setAnimPlay] = useState(false);
 
   const [scaleAnim] = useState(new Animated.Value(1));
+
+  const { del, update, loading } = useAccount();
   const timeToFlip = 700;
 
   useEffect(() => {
@@ -82,6 +91,13 @@ export default function Profile() {
     ]).start();
   }, [animPlay]);
 
+  useEffect(() => {
+    if (!(user && token)) {
+      router.replace("/(intro)");
+      return;
+    }
+  }, [user, token]);
+
   const playAnimationTimeout = (f: () => void) => {
     setAnimPlay(true);
     setActionsBlocked(true);
@@ -98,7 +114,7 @@ export default function Profile() {
     if (actionsBlocked) return;
     playAnimationTimeout(() => {
       setIsEditing((prev) => {
-        if (!prev) setEditedUser(user);
+        if (!prev) setEditedUser(user!);
         return !prev;
       });
     });
@@ -107,7 +123,20 @@ export default function Profile() {
   const handleSave = () => {
     if (actionsBlocked) return;
     playAnimationTimeout(() => {
-      setUser(editedUser);
+      update(
+        {
+          email: editedUser.email,
+          full_name: editedUser.fullName,
+          phone_number: editedUser.phoneNumber,
+        },
+        token!
+      )
+        .then(() => refreshUser())
+        .catch((error) => {
+          const err = error as ApiError;
+          console.log(`error when handling save ${JSON.stringify(err)}`);
+        });
+      // some loading icon near, instead of the pen, display the edit while the update is loading
       setIsEditing(false);
     });
   };
@@ -115,21 +144,23 @@ export default function Profile() {
   const cancelEdit = () => {
     if (actionsBlocked) return;
     playAnimationTimeout(() => {
-      setEditedUser(user);
+      setEditedUser(user!);
       setIsEditing(false);
     });
   };
 
   const logout = () => {
     if (actionsBlocked) return;
-    router.replace("/(intro)");
+    logoutUser();
   };
 
-  const deleteAccount = () => {
-    router.replace("/(intro)");
+  const deleteAccount = async () => {
+    if (actionsBlocked) return;
+    await del(token!);
+    logoutUser();
   };
 
-  const deleteAccountClick = () => {
+  const deleteAccountClick = async () => {
     if (actionsBlocked) return;
     Alert.alert(
       "Delete account",
@@ -140,7 +171,10 @@ export default function Profile() {
           onPress: () => {},
           style: "cancel",
         },
-        { text: "YES, DELETE MY ACCOUNT", onPress: () => deleteAccount() },
+        {
+          text: "YES, DELETE MY ACCOUNT",
+          onPress: async () => await deleteAccount(),
+        },
       ]
     );
   };
@@ -149,6 +183,8 @@ export default function Profile() {
     inputRange: [0, 1],
     outputRange: [0, 1],
   });
+
+  if (!(user && token)) return <CenteredLogoLoadingComponent />;
 
   return (
     <TouchableWithoutFeedback
@@ -165,7 +201,7 @@ export default function Profile() {
         >
           <View style={styles.header}>
             <Text style={styles.title}>Profile</Text>
-            {!isEditing && (
+            {!isEditing && !loading && (
               <TouchableOpacity onPress={handleEditToggle}>
                 <FontAwesome
                   name="pencil"
@@ -174,6 +210,7 @@ export default function Profile() {
                 />
               </TouchableOpacity>
             )}
+            {!isEditing && loading && <LogoLoadingComponent size={24} />}
           </View>
           <ScrollView
             contentContainerStyle={generalStyles.scrollContainer}
@@ -206,9 +243,12 @@ export default function Profile() {
               name="Full Name"
               onChange={(text) =>
                 !actionsBlocked &&
-                setEditedUser({ ...editedUser, fullName: text })
+                setEditedUser({
+                  ...editedUser,
+                  ...(text.trim().length > 0 && { fullName: text }),
+                })
               }
-              value={editedUser.fullName}
+              value={editedUser.fullName || ""}
             />
 
             <ProfileField
@@ -219,12 +259,12 @@ export default function Profile() {
                 setEditedUser(
                   {
                     ...editedUser,
-                    phoneNumber: text,
+                    ...(text.trim().length > 0 && { phoneNumber: text }),
                   }
                   // verify phone number mechanism
                 )
               }
-              value={editedUser.phoneNumber}
+              value={editedUser.phoneNumber || ""}
             />
 
             {isEditing && (

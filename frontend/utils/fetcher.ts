@@ -6,7 +6,6 @@ export type HTTPMethod = "POST" | "GET" | "PUT" | "DELETE";
 export const fetcher = async <T>({
   endpoint,
   method,
-  token,
   headers,
   body,
   options,
@@ -14,7 +13,6 @@ export const fetcher = async <T>({
 }: {
   endpoint: string;
   method: HTTPMethod;
-  token?: string;
   body?: any;
   contentType?: string;
   headers?: Record<string, string>;
@@ -34,7 +32,6 @@ export const fetcher = async <T>({
   }
   const apiHeaders: HeadersInit = {
     "Content-Type": contentType,
-    ...(token && { Authorization: `Bearer ${token}` }),
     ...(headers || {}),
   };
 
@@ -53,9 +50,10 @@ export const fetcher = async <T>({
         error instanceof String ? { error: error } : error
       );
     }
+    if (response.status === 204) return {} as any;
     return await response.json();
   } catch (error: any) {
-    console.error("Fetch error:", JSON.stringify(error));
+    console.error("Fetch error:", error.message);
     if (error instanceof ApiError) throw error;
     throw new ApiError(500, { error: "Internal server error." });
   }

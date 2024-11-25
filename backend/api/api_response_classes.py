@@ -1,7 +1,7 @@
 from typing import List
 from pydantic import BaseModel
 
-from common import models
+from backend.common import models
 
 
 class GetRequestsResponseForStatus(BaseModel):

@@ -20,7 +20,7 @@ import InputWithMessage from "@/components/InputWithMessage";
 import {
   EMPTY_VALIDATE_REGISTER_RETURN,
   ValidateRegisterReturn,
-} from "@/utils/validators";
+} from "@/utils/validators/register";
 import { Feather, MaterialIcons } from "@expo/vector-icons";
 import { Colors } from "@/constants/Theme";
 import { Message } from "@/components/Message";
@@ -36,7 +36,7 @@ const EMPTY_VALIDATION_FORM = {
   username: "vladrosuuu",
   password: "123456",
   confirmPassword: "123456",
-  email: "vladuu@gmail.com",
+  email: "vladd@gmail.com",
 };
 
 export default function Register() {
@@ -147,9 +147,9 @@ export default function Register() {
       const res = await register({
         ...formInput,
       });
-      if (res.ok) {
+      if (!res.validationErrors) {
         setMessage({ text: "User registered successfully", error: false });
-      } else if (res.validationErrors) {
+      } else {
         setFormValidationErrors(res.validationErrors);
       }
     } catch (error: any) {
