@@ -1,62 +1,13 @@
 import { ApiError } from "@/types/ApiError.types";
 import { fetcher } from "../fetcher";
 import { useState } from "react";
-import { Group } from "@/types/Group.types";
-
-type CreateGroupParams = {
-  name: string;
-  description: string;
-};
-
-type UpdateGroupParams = {
-  _id: string;
-  name: string;
-  description: string;
-  owner_id: string;
-  member_ids: string[];
-  bill_ids: string[];
-};
-
-type GroupApiResponse = {
-  _id: string;
-  name: string;
-  description: string;
-  owner_id: string;
-  member_ids: string[];
-  bill_ids: string[];
-  join_code: string;
-};
-
-type GroupUsersApiResponse = {
-  _id: string;
-  full_name: string;
-  username: string;
-};
-
-const groupMapper = (
-  res: GroupApiResponse,
-  usersRes: GroupUsersApiResponse[]
-): Group => {
-  const owner = usersRes.find((m) => m._id === res.owner_id)!;
-  return {
-    id: res._id,
-    description: res.description,
-    members: usersRes
-      .filter((m) => m._id !== res.owner_id)
-      .map((m) => ({
-        fullName: m.full_name,
-        id: m._id,
-        username: m.username,
-      })),
-    name: res.name,
-    owner: {
-      fullName: owner.full_name,
-      id: res.owner_id,
-      username: owner.username,
-    },
-    pendingMembers: [],
-  };
-};
+import {
+  CreateGroupParams,
+  Group,
+  GroupApiResponse,
+  GroupUsersApiResponse,
+  UpdateGroupParams,
+} from "@/types/Group.types";
 
 export const useGroup = () => {
   const [loading, setLoading] = useState(false);
@@ -84,7 +35,7 @@ export const useGroup = () => {
 
       const usersRes = await getUsersInGroup(id, token);
 
-      return groupMapper(res, usersRes);
+      return new Group(res, usersRes);
     } catch (error) {
       const err = error as ApiError;
       throw Error("Could not get group");
@@ -115,7 +66,7 @@ export const useGroup = () => {
   const update = async (data: UpdateGroupParams, token: string) => {
     try {
       setLoading(true);
-      const res = await fetcher<GroupApiResponse>({
+      await fetcher<GroupApiResponse>({
         endpoint: `/api/v1/groups/${data._id}`,
         method: "PUT",
         headers: {
@@ -123,8 +74,6 @@ export const useGroup = () => {
         },
         body: data,
       });
-      const usersRes = await getUsersInGroup(data._id, token);
-      return groupMapper(res, usersRes);
     } catch (error) {
       const err = error as ApiError;
       throw Error("Could not update group");

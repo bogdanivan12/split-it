@@ -19,10 +19,12 @@ import { useAuth } from "@/context/AuthContext";
 import { useGroup } from "@/utils/hooks/useGroup";
 import { router, useGlobalSearchParams } from "expo-router";
 import { CenteredLogoLoadingComponent } from "@/components/LogoLoadingComponent";
+import { useRequest } from "@/utils/hooks/useRequest";
 
 const Group: React.FC = () => {
   const { user, token, refreshUser } = useAuth();
-  const { get, loading, update } = useGroup();
+  const { get, loading: groupLoading, update } = useGroup();
+  const { loading: requestLoading } = useRequest()
   const { id } = useGlobalSearchParams();
   const [groupId] = useState(id as string);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -30,12 +32,16 @@ const Group: React.FC = () => {
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
   const [groupDetails, setGroupDetails] = useState<GroupType>({
     description: "",
+    joinCode: "",
     id: "",
     members: [],
     name: "",
     owner: {} as UserInGroup,
-    pendingMembers: [],
   });
+  const [pendingMembers, setPendingMembers] = useState<{
+    sent: UserInGroup[];
+    received: UserInGroup[];
+  }>({ sent: [], received: [] });
   const [editedDetails, setEditedDetails] = useState({
     name: "",
     description: "",
@@ -49,6 +55,8 @@ const Group: React.FC = () => {
     });
     setEditModalOpen(true);
   };
+
+  const isLoading = () => groupLoading && requestLoading;
   const save = async () => {
     if (editedDetails.name.trim() === "") {
       Alert.alert("Required", "The name is required for a group", [
@@ -77,7 +85,7 @@ const Group: React.FC = () => {
       await refreshUser();
       setEditModalOpen(false);
     } catch (error: any) {
-      Alert.prompt("Error", error.message);
+      Alert.alert("Error", error.message);
     }
     setGroupDetails((prev) => ({
       ...prev,
@@ -114,7 +122,7 @@ const Group: React.FC = () => {
   const discard = () => {
     setEditModalOpen(false);
   };
-  if (loading && !editModalOpen) return <CenteredLogoLoadingComponent />;
+  if (isLoading() && !editModalOpen) return <CenteredLogoLoadingComponent />;
   return (
     <View style={styles.container}>
       {isAdmin && (
@@ -124,7 +132,7 @@ const Group: React.FC = () => {
         >
           <View style={modalStyles.modalContainer}>
             <Text style={modalStyles.modalTitle}>Edit group information</Text>
-            {editModalOpen && loading ? (
+            {editModalOpen && isLoading() ? (
               <CenteredLogoLoadingComponent />
             ) : (
               <ScrollView
@@ -219,7 +227,7 @@ const Group: React.FC = () => {
               </View>
             ))}
             {isAdmin &&
-              groupDetails.pendingMembers.map((member) => (
+              pendingMembers.received.map((member) => (
                 <View key={member.id} style={styles.memberContainer}>
                   <Text style={styles.memberTextFullName}>
                     {member.fullName}
