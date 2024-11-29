@@ -65,7 +65,7 @@ async def create_group(
 
 
 @router.get("/{group_id}", status_code=status.HTTP_200_OK,
-            response_model=models.Group)
+            response_model=models.FullInfoGroup)
 async def get_group(
         group_id: PydanticObjectId,
         user: Annotated[models.User, Depends(users.get_current_user)]
@@ -94,8 +94,22 @@ async def get_group(
     if user.id not in group.member_ids:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
                             detail="User is not a member of the group")
+    
+    try:
+        users_cursor = db["users"].find({"_id": {"$in": group.member_ids}}, {"_id": 1, "username": 1, "full_name": 1})
+        users = list(users_cursor)
+        user_objects = [models.UserSummary(**user) for user in users]
+    except Exception as exception:
+        raise HTTPException(status_code=status.HTTP_424_FAILED_DEPENDENCY, detail=str(exception))
 
-    return group
+    return models.FullInfoGroup(
+        bill_ids=group.bill_ids,
+        name=group.name,
+        description=group.description,
+        join_code=group.join_code,
+        members=user_objects,
+        owner_id=group.owner_id,
+    )
 
 
 @router.get("/", status_code=status.HTTP_200_OK,
@@ -199,31 +213,3 @@ async def join_group(
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_424_FAILED_DEPENDENCY,
                             detail=str(e))
-
-
-@router.get("/{group_id}/users", status_code=status.HTTP_200_OK, response_model=List[models.UserSummary])
-async def get_users_by_group_id(
-    group_id: PydanticObjectId,
-    user: Annotated[models.User, Depends(users.get_current_user)]
-):
-    try:
-        group_dict = db["groups"].find_one({"_id": group_id})
-    except Exception as exception:
-        raise HTTPException(status_code=status.HTTP_424_FAILED_DEPENDENCY, detail=str(exception))
-
-    if not group_dict:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Group not found")
-
-    group = models.Group(**group_dict)
-
-    if user.id not in group.member_ids:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User is not a member of the group")
-
-    try:
-        users_cursor = db["users"].find({"_id": {"$in": group.member_ids}}, {"_id": 1, "username": 1, "full_name": 1})
-        users = list(users_cursor)
-    except Exception as exception:
-        raise HTTPException(status_code=status.HTTP_424_FAILED_DEPENDENCY, detail=str(exception))
-
-    user_objects = [models.UserSummary(**user) for user in users]
-    return user_objects

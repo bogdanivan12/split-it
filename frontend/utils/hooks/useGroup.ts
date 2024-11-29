@@ -5,22 +5,11 @@ import {
   CreateGroupParams,
   Group,
   GroupApiResponse,
-  GroupUsersApiResponse,
   UpdateGroupParams,
 } from "@/types/Group.types";
 
 export const useGroup = () => {
   const [loading, setLoading] = useState(false);
-
-  const getUsersInGroup = async (id: string, token: string) => {
-    return await fetcher<GroupUsersApiResponse[]>({
-      endpoint: `/api/v1/groups/${id}/users`,
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-  };
 
   const get = async (id: string, token: string) => {
     try {
@@ -33,9 +22,7 @@ export const useGroup = () => {
         },
       });
 
-      const usersRes = await getUsersInGroup(id, token);
-
-      return new Group(res, usersRes);
+      return new Group(res);
     } catch (error) {
       const err = error as ApiError;
       throw Error("Could not get group");

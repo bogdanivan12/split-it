@@ -105,6 +105,7 @@ const Group: React.FC = () => {
         setIsAdmin(gr.owner.id === user!.id);
         console.log(`setting groups ${JSON.stringify(gr)}`);
         setGroupDetails(gr);
+        // load pending members
       } catch (err) {
         router.replace("/(account)");
       }

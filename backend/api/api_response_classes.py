@@ -5,5 +5,5 @@ from backend.common import models
 
 
 class GetRequestsResponseForStatus(BaseModel):
-    sent: List[models.Request]
-    received: List[models.Request]
+    sent: List[models.FullInfoRequest]
+    received: List[models.FullInfoRequest]

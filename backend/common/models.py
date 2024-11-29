@@ -42,6 +42,18 @@ class Group(BaseModel):
     class Config:
         json_encoders = {PydanticObjectId: str}
 
+class FullInfoGroup(BaseModel):
+    id: Optional[PydanticObjectId] = Field(alias="_id", default=None)
+    name: str = Field(min_length=5, max_length=30)
+    description: Optional[str] = Field(max_length=100, default="")
+    owner_id: Optional[PydanticObjectId] = Field(default=None)
+    members: List[UserSummary] = Field(default_factory=list)
+    bill_ids: Optional[List[PydanticObjectId]] = Field(default_factory=list)
+    join_code: Optional[str] = Field(min_length=4, max_length=20, default=None)
+
+    class Config:
+        json_encoders = {PydanticObjectId: str}
+
 
 class InitialPayer(BaseModel):
     user_id: str
@@ -119,6 +131,18 @@ class Request(BaseModel):
     class Config:
         json_encoders = {PydanticObjectId: str}
 
+
+class FullInfoRequest(BaseModel):
+    id: Optional[PydanticObjectId] = Field(alias="_id", default=None)
+    group_id: PydanticObjectId
+    sender: UserSummary
+    recipiend: UserSummary
+    date: datetime = Field(default_factory=datetime.now)
+    type: RequestType = RequestType.JOIN_GROUP
+    status: RequestStatus = RequestStatus.PENDING
+
+    class Config:
+        json_encoders = {PydanticObjectId: str}
 
 class Token(BaseModel):
     access_token: str
