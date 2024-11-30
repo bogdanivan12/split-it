@@ -261,8 +261,6 @@ const Group: React.FC = () => {
 
       {message && (
         <Message
-          containerStyle={{ alignSelf: "center" }}
-          style={{ textAlign: "center" }}
           text={message}
           icon={ErrorIcon}
         />
