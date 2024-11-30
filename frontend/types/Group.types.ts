@@ -17,7 +17,7 @@ export type GroupApiResponse = {
   name: string;
   description?: string;
   owner_id: string;
-  members: FullUsersApiResponse[];
+  member_ids: string[];
   bill_ids: string[];
   join_code: string;
 };
@@ -27,8 +27,6 @@ export type FullUsersApiResponse = {
   full_name: string;
   username: string;
 };
-
-
 
 export type UserInGroup = {
   id: string;
@@ -44,12 +42,12 @@ export class Group {
   members!: UserInGroup[];
   joinCode!: string;
 
-  constructor(res: GroupApiResponse) {
-    const owner = res.members.find((m) => m._id === res.owner_id)!;
+  constructor(res: GroupApiResponse, members: FullUsersApiResponse[]) {
+    const owner = members.find((m) => m._id === res.owner_id)!;
     return {
       id: res._id,
       description: res.description || "",
-      members: res.members
+      members: members
         .filter((m) => m._id !== res.owner_id)
         .map((m) => ({
           fullName: m.full_name,
