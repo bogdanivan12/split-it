@@ -14,6 +14,8 @@ import { Colors } from "@/constants/Theme";
 import { Entypo } from "@expo/vector-icons";
 import { ApiError } from "@/types/ApiError.types";
 import { MemberInGroup } from "@/types/Request.types";
+import { Message } from "../Message";
+import { ErrorIcon } from "../Icons";
 
 const InvitedUser = ({
   username,
@@ -45,18 +47,20 @@ export const InviteModal = ({
 }) => {
   const [searchValue, setSearchValue] = useState("");
   const [invitedUsers, setInvitedUsers] = useState<string[]>([]);
-  const [message, setMessage] = useState("");
-  const cancel = () => {
+  const [message, setMessage] = useState<string | null>(null);
+  const reset = () => {
     setSearchValue("");
+    setMessage(null);
     setInvitedUsers([]);
+  };
+  const cancel = () => {
+    reset();
     onClose();
   };
   const inviteAction = async () => {
     try {
       await invite(invitedUsers);
-      setSearchValue("");
-      setInvitedUsers([]);
-      onClose();
+      reset();
     } catch (err: any) {
       const error = err as ApiError;
       setMessage(error.message);
@@ -76,13 +80,9 @@ export const InviteModal = ({
       } else if (userExists.has_request) {
         errorMessage = "User already has a pending request in this group.";
       }
-    } catch (err) {
-      const error = err as ApiError;
-      if (error.code === 404) {
-        errorMessage = "User not found.";
-      }
+    } catch (err: any) {
+      errorMessage = err.message;
     }
-    console.log(errorMessage)
     if (errorMessage !== null) {
       setMessage(errorMessage);
       setSearchValue("");
@@ -131,6 +131,14 @@ export const InviteModal = ({
               key={user}
             />
           ))}
+
+          {message && (
+            <Message
+              containerStyle={{ marginTop: 20 }}
+              text={message}
+              icon={ErrorIcon}
+            />
+          )}
 
           <View style={modalStyles.modalActions}>
             <TouchableOpacity style={modalStyles.modalButton} onPress={cancel}>

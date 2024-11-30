@@ -14,7 +14,6 @@ export const useRequest = () => {
 
   const getAll = async (token: string) => {
     try {
-      console.log(`token: ${token}`);
       return await fetcher<RequestsApiResponse>({
         endpoint: "/api/v1/requests/",
         method: "GET",
@@ -86,8 +85,8 @@ export const useRequest = () => {
       });
     } catch (error) {
       const err = error as ApiError;
-      console.log(err.body)
-      throw Error("Could not check if user exists");
+      if (err.code === 404) throw Error("User not found");
+      throw Error("Could not add user");
     } finally {
       setLoading(false);
     }
@@ -129,7 +128,23 @@ export const useRequest = () => {
     }
   };
 
-  const decline = async (requestId: string, token: string) => {};
+  const decline = async (requestId: string, token: string) => {
+    try {
+      setLoading(true);
+      await fetcher({
+        endpoint: `/api/v1/requests/${requestId}/decline`,
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+    } catch (error) {
+      const err = error as ApiError;
+      throw Error("Could not decline invite");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return {
     loading,

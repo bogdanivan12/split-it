@@ -212,11 +212,9 @@ def get_user_member_in_group(username: str, group_id: PydanticObjectId):
     This endpoint returns whether a user is a member of the group or has a related request, using username.
     """
     try:
-        print(f'getting group id {group_id}')
         group = db["groups"].find_one({"_id": group_id})
     except Exception as exception:
         raise HTTPException(status_code=status.HTTP_424_FAILED_DEPENDENCY, detail=str(exception))
-    print(group)
     if not group:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Group not found")
     

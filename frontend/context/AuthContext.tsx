@@ -34,7 +34,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const loadTokenFromLocalStorage = async () => {
     setLoading(true);
     const storedToken = await AsyncStorage.getItem(TOKEN_STORAGE_KEY);
-    // console.log(`stored token: ${storedToken}`);
     if (storedToken) {
       setToken(storedToken);
     }
@@ -63,7 +62,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     if (!token) {
       router.replace("/(intro)");
     }
-    console.log("refreshing user");
     refreshUser();
   }, [token]);
 
@@ -73,7 +71,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   useEffect(() => {
     if (user) {
-      console.log(route.pathname);
       if (["/login", "/register", "/(intro)"].includes(route.pathname))
         router.replace("/(account)");
     }

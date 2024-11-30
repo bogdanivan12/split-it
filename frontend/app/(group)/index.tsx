@@ -21,6 +21,9 @@ import { router, useGlobalSearchParams } from "expo-router";
 import { CenteredLogoLoadingComponent } from "@/components/LogoLoadingComponent";
 import { useRequest } from "@/utils/hooks/useRequest";
 import { Requests } from "@/types/Request.types";
+import { Message } from "@/components/Message";
+import { ErrorIcon } from "@/components/Icons";
+import { useIsFocused } from "@react-navigation/native";
 
 const Group: React.FC = () => {
   const { user, token, refreshUser } = useAuth();
@@ -36,13 +39,11 @@ const Group: React.FC = () => {
   const [shouldNotDisplayLoading, setShouldNotDisplayLoading] = useState(false);
   const { id } = useGlobalSearchParams();
   const [groupId] = useState(id as string);
-  const [message, setMessage] = useState<{
-    error: boolean;
-    text: string;
-  } | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
+  const isFocused = useIsFocused();
   const [groupDetails, setGroupDetails] = useState<GroupType>({
     description: "",
     joinCode: "",
@@ -59,6 +60,10 @@ const Group: React.FC = () => {
     name: "",
     description: "",
   });
+
+  useEffect(() => {
+    setMessage(null);
+  }, [isFocused]);
 
   const accept = async (req_id: string) => {
     try {
@@ -78,7 +83,9 @@ const Group: React.FC = () => {
     try {
       await decline(req_id, token!);
       await refreshUser();
-    } catch (err: any) {}
+    } catch (err: any) {
+      setMessage(err.message);
+    }
   };
 
   const userExistsCheck = async (username: string) => {
@@ -127,7 +134,7 @@ const Group: React.FC = () => {
       await refreshUser();
       setEditModalOpen(false);
     } catch (error: any) {
-      setMessage({ error: true, text: error.message });
+      setMessage(error.message);
     }
   };
 
@@ -140,17 +147,15 @@ const Group: React.FC = () => {
       try {
         const gr = await get(groupId, token!);
         setIsAdmin(gr.owner.id === user!.id);
-        console.log(`setting groups ${JSON.stringify(gr)}`);
         setGroupDetails(gr);
         setShouldNotDisplayLoading(true);
         const reqs = await getByGroup(gr.id, token!);
         setShouldNotDisplayLoading(false);
         setRequests(reqs);
       } catch (err) {
-        setMessage({
-          error: true,
-          text: "Failed to refresh user. Please log out and try again.",
-        });
+        setMessage(
+          "Failed to refresh group info. Please log out and try again."
+        );
       }
     };
     f();
@@ -253,6 +258,15 @@ const Group: React.FC = () => {
         )}
       </View>
       <Text style={styles.description}>{groupDetails.description}</Text>
+
+      {message && (
+        <Message
+          containerStyle={{ alignSelf: "center" }}
+          style={{ textAlign: "center" }}
+          text={message}
+          icon={ErrorIcon}
+        />
+      )}
 
       <ScrollView
         showsVerticalScrollIndicator={false}

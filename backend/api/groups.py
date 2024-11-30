@@ -84,7 +84,6 @@ async def get_group(
     except Exception as exception:
         raise HTTPException(status_code=status.HTTP_424_FAILED_DEPENDENCY,
                             detail=str(exception))
-    print(group_dict)
     if not group_dict:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail="Group not found")

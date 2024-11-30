@@ -21,7 +21,6 @@ export const useGroup = () => {
           Authorization: `Bearer ${token}`,
         },
       });
-      console.log(res);
       return new Group(res);
     } catch (error) {
       const err = error as ApiError;
