@@ -109,6 +109,7 @@ async def get_group(
         join_code=group.join_code,
         members=user_objects,
         owner_id=group.owner_id,
+        _id=group_id
     )
 
 
@@ -199,6 +200,23 @@ async def join_group(
                             detail="You are already a member of the group")
 
     group = models.Group(**group_dict)
+    existing_request = db["requests"].find_one({
+        "group_id": group_dict["_id"],
+        "sender_id": user.id,
+        "type": models.RequestType.JOIN_GROUP
+    })
+    if existing_request:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT,
+                            detail="You have already requested to join this group")
+    
+    existing_request = db["requests"].find_one({
+        "group_id": group_dict["_id"],
+        "recipiend_id": user.id,
+        "type": models.RequestType.JOIN_GROUP
+    })
+    if existing_request:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT,
+                            detail="You have already been invited to this group")
     join_request = models.Request(
         group_id=group.id,
         sender_id=user.id,

@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import React, { useEffect, useState } from "react";
 import { Colors } from "@/constants/Theme";
-import { Group as GroupType, UserInGroup } from "@/types/Group.types";
+import { Group as GroupType } from "@/types/Group.types";
 import { Entypo, FontAwesome } from "@expo/vector-icons";
 import CenteredModal from "@/components/modals/CenteredModal";
 import { generalStyles, modalStyles } from "@/constants/SharedStyles";
@@ -20,13 +20,26 @@ import { useGroup } from "@/utils/hooks/useGroup";
 import { router, useGlobalSearchParams } from "expo-router";
 import { CenteredLogoLoadingComponent } from "@/components/LogoLoadingComponent";
 import { useRequest } from "@/utils/hooks/useRequest";
+import { Requests } from "@/types/Request.types";
 
 const Group: React.FC = () => {
   const { user, token, refreshUser } = useAuth();
   const { get, loading: groupLoading, update } = useGroup();
-  const { loading: requestLoading } = useRequest()
+  const {
+    acceptJoin,
+    decline,
+    getByGroup,
+    checkIfUserExists,
+    invite,
+    loading: requestLoading,
+  } = useRequest();
+  const [shouldNotDisplayLoading, setShouldNotDisplayLoading] = useState(false);
   const { id } = useGlobalSearchParams();
   const [groupId] = useState(id as string);
+  const [message, setMessage] = useState<{
+    error: boolean;
+    text: string;
+  } | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
@@ -36,18 +49,45 @@ const Group: React.FC = () => {
     id: "",
     members: [],
     name: "",
-    owner: {} as UserInGroup,
+    owner: { fullName: "", id: "", username: "" },
   });
-  const [pendingMembers, setPendingMembers] = useState<{
-    sent: UserInGroup[];
-    received: UserInGroup[];
-  }>({ sent: [], received: [] });
+  const [requests, setRequests] = useState<Requests>({
+    sent: [],
+    received: [],
+  });
   const [editedDetails, setEditedDetails] = useState({
     name: "",
     description: "",
   });
-  const accept = (member: string) => {};
-  const reject = (member: string) => {};
+
+  const accept = async (req_id: string) => {
+    try {
+      setShouldNotDisplayLoading(true)
+      await acceptJoin(req_id, token!);
+      setRequests({
+        sent: [],
+        received: [],
+      });
+      await refreshUser();
+      setShouldNotDisplayLoading(false)
+    } catch (err: any) {}
+  };
+  const reject = async (req_id: string) => {
+    try {
+      await decline(req_id, token!);
+      await refreshUser();
+    } catch (err: any) {}
+  };
+
+  const userExistsCheck = async (username: string) => {
+    const groupId = groupDetails.id;
+    return await checkIfUserExists({ groupId, username }, token!);
+  };
+  const inviteUsers = async (usernames: string[]) => {
+    const groupId = groupDetails.id;
+    await invite({ groupId, usernames }, token!);
+  };
+
   const openModal = () => {
     setEditedDetails({
       name: groupDetails.name,
@@ -56,7 +96,7 @@ const Group: React.FC = () => {
     setEditModalOpen(true);
   };
 
-  const isLoading = () => groupLoading && requestLoading;
+  const isLoading = () => groupLoading || requestLoading;
   const save = async () => {
     if (editedDetails.name.trim() === "") {
       Alert.alert("Required", "The name is required for a group", [
@@ -85,13 +125,13 @@ const Group: React.FC = () => {
       await refreshUser();
       setEditModalOpen(false);
     } catch (error: any) {
-      Alert.alert("Error", error.message);
+      setMessage({ error: true, text: error.message });
     }
-    setGroupDetails((prev) => ({
-      ...prev,
-      description: editedDetails.description,
-      name: editedDetails.name,
-    }));
+    // setGroupDetails((prev) => ({
+    //   ...prev,
+    //   description: editedDetails.description,
+    //   name: editedDetails.name,
+    // }));
   };
 
   useEffect(() => {
@@ -105,9 +145,12 @@ const Group: React.FC = () => {
         setIsAdmin(gr.owner.id === user!.id);
         console.log(`setting groups ${JSON.stringify(gr)}`);
         setGroupDetails(gr);
-        // load pending members
+        setShouldNotDisplayLoading(true);
+        const reqs = await getByGroup(gr.id, token!);
+        setShouldNotDisplayLoading(false);
+        setRequests(reqs);
       } catch (err) {
-        router.replace("/(account)");
+        // router.replace("/(account)");
       }
     };
     f();
@@ -123,7 +166,8 @@ const Group: React.FC = () => {
   const discard = () => {
     setEditModalOpen(false);
   };
-  if (isLoading() && !editModalOpen) return <CenteredLogoLoadingComponent />;
+  if (isLoading() && !editModalOpen && !shouldNotDisplayLoading)
+    return <CenteredLogoLoadingComponent />;
   return (
     <View style={styles.container}>
       {isAdmin && (
@@ -191,6 +235,8 @@ const Group: React.FC = () => {
         <InviteModal
           open={inviteModalOpen}
           onClose={() => setInviteModalOpen(false)}
+          checkIfUserExists={userExistsCheck}
+          invite={inviteUsers}
         />
       )}
       <View style={styles.headerWrapper}>
@@ -208,6 +254,9 @@ const Group: React.FC = () => {
         contentContainerStyle={{ flexGrow: 1, paddingBottom: 200 }}
       >
         <View>
+          <Text style={styles.joinCodeHeader}>
+            Join code: {groupDetails.joinCode}
+          </Text>
           <Text style={styles.sectionHeader}>Group Master</Text>
           <View
             key={groupDetails.owner.id}
@@ -228,21 +277,21 @@ const Group: React.FC = () => {
               </View>
             ))}
             {isAdmin &&
-              pendingMembers.received.map((member) => (
-                <View key={member.id} style={styles.memberContainer}>
+              requests.received.map((req) => (
+                <View key={req.id} style={styles.memberContainer}>
                   <Text style={styles.memberTextFullName}>
-                    {member.fullName}
+                    {req.sender.fullName}
                   </Text>
-                  <Text style={styles.memberText}>{member.username}</Text>
+                  <Text style={styles.memberText}>{req.sender.username}</Text>
                   <View style={styles.groupRequestButtons}>
-                    <TouchableOpacity onPress={() => reject(member.username)}>
+                    <TouchableOpacity onPress={() => reject(req.id)}>
                       <Entypo
                         size={36}
                         name="cross"
                         color={Colors.theme1.textReject}
                       />
                     </TouchableOpacity>
-                    <TouchableOpacity onPress={() => accept(member.username)}>
+                    <TouchableOpacity onPress={() => accept(req.id)}>
                       <Entypo
                         size={36}
                         name="check"
@@ -299,6 +348,14 @@ const styles = StyleSheet.create({
   },
   sectionHeader: {
     fontSize: 24,
+    fontFamily: "AlegreyaMedium",
+    fontWeight: "bold",
+    color: Colors.theme1.text,
+    marginTop: 10,
+    marginBottom: 5,
+  },
+  joinCodeHeader: {
+    fontSize: 20,
     fontFamily: "AlegreyaMedium",
     fontWeight: "bold",
     color: Colors.theme1.text,

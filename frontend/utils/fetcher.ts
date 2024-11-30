@@ -53,7 +53,6 @@ export const fetcher = async <T>({
     if (response.status === 204) return {} as any;
     return await response.json();
   } catch (error: any) {
-    console.log("Fetch error:", error.message);
     if (error instanceof ApiError) throw error;
     throw new ApiError(500, { error: "Internal server error." });
   }

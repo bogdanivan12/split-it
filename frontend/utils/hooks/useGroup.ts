@@ -21,7 +21,7 @@ export const useGroup = () => {
           Authorization: `Bearer ${token}`,
         },
       });
-
+      console.log(res);
       return new Group(res);
     } catch (error) {
       const err = error as ApiError;
@@ -89,11 +89,32 @@ export const useGroup = () => {
     }
   };
 
+  const join = async (groupCode: string, token: string) => {
+    try {
+      setLoading(true);
+      await fetcher({
+        endpoint: `/api/v1/groups/join/${groupCode}`,
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+    } catch (error) {
+      const err = error as ApiError;
+      if (err.code === 404) throw Error("Invalid join code");
+      if (err.code === 409) throw Error(err.body.detail);
+      throw Error("Could not join group");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
     get,
     getAll,
     update,
     create,
+    join,
     loading,
   };
 };

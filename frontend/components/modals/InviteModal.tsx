@@ -12,6 +12,8 @@ import {
 import { generalStyles, modalStyles } from "@/constants/SharedStyles";
 import { Colors } from "@/constants/Theme";
 import { Entypo } from "@expo/vector-icons";
+import { ApiError } from "@/types/ApiError.types";
+import { MemberInGroup } from "@/types/Request.types";
 
 const InvitedUser = ({
   username,
@@ -33,27 +35,56 @@ const InvitedUser = ({
 export const InviteModal = ({
   open,
   onClose,
+  checkIfUserExists,
+  invite,
 }: {
   open: boolean;
   onClose: () => void;
+  checkIfUserExists: (username: string) => Promise<MemberInGroup>;
+  invite: (usernames: string[]) => Promise<void>;
 }) => {
   const [searchValue, setSearchValue] = useState("");
   const [invitedUsers, setInvitedUsers] = useState<string[]>([]);
+  const [message, setMessage] = useState("");
   const cancel = () => {
     setSearchValue("");
-    setInvitedUsers([])
+    setInvitedUsers([]);
     onClose();
   };
-  const invite = () => {
-    setSearchValue("");
-    setInvitedUsers([])
-    onClose();
+  const inviteAction = async () => {
+    try {
+      await invite(invitedUsers);
+      setSearchValue("");
+      setInvitedUsers([]);
+      onClose();
+    } catch (err: any) {
+      const error = err as ApiError;
+      setMessage(error.message);
+    }
   };
-  const add = () => {
+  const add = async () => {
+    if (searchValue.trim() === "") {
+      setSearchValue("");
+      return;
+    }
     if (invitedUsers.includes(searchValue)) return;
-    if (false) {
-      // fetch backend if the user exists
-      // alert user does not exist
+    let errorMessage: string | null = null;
+    try {
+      const userExists = await checkIfUserExists(searchValue);
+      if (userExists.in_group) {
+        errorMessage = "User already in group.";
+      } else if (userExists.has_request) {
+        errorMessage = "User already has a pending request in this group.";
+      }
+    } catch (err) {
+      const error = err as ApiError;
+      if (error.code === 404) {
+        errorMessage = "User not found.";
+      }
+    }
+    if (errorMessage) {
+      setMessage(errorMessage);
+      return;
     }
     setSearchValue("");
     setInvitedUsers((prev) => [...prev, searchValue]);
@@ -103,7 +134,10 @@ export const InviteModal = ({
             <TouchableOpacity style={modalStyles.modalButton} onPress={cancel}>
               <Text style={modalStyles.modalButtonText}>Cancel</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={modalStyles.modalButton} onPress={invite}>
+            <TouchableOpacity
+              style={modalStyles.modalButton}
+              onPress={inviteAction}
+            >
               <Text style={modalStyles.modalButtonText}>Invite</Text>
             </TouchableOpacity>
           </View>
@@ -135,7 +169,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 20,
-    height: 40
+    height: 40,
   },
   invitedUsersContainer: {},
   inputContainer: {

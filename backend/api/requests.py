@@ -23,17 +23,16 @@ async def get_requests(
     Retrieves all requests from the database.
     """
     try:
-        requests = db["requests"].find()
+        requests_cursor = db["requests"].find(
+            {"$or": [{"sender_id": user.id}, {"recipient_id": user.id}]}
+        )
+        requests = list(requests_cursor)
     except Exception as exception:
         raise HTTPException(status_code=status.HTTP_424_FAILED_DEPENDENCY,
                             detail=str(exception))
 
-    request_objects = [
-        models.Request(**request)
-        for request in requests
-        if user.id in [request["sender_id"], request["recipient_id"]]
-    ]
-    # Extract sender_id and recipient_id from request_objects
+    request_objects = [models.Request(**request) for request in requests]
+    
     user_ids = {request.sender_id for request in request_objects}.union(
         {request.recipient_id for request in request_objects}
     )
@@ -48,9 +47,10 @@ async def get_requests(
         raise HTTPException(status_code=status.HTTP_424_FAILED_DEPENDENCY, detail=str(exception))
 
     for request_obj_full in request_objects:
-        request_obj_full.sender = users.get(str(request_obj.sender_id))
+        request_obj_full.sender = users.get(str(request_obj_full.sender_id))
+        request_obj_full._id = request_obj_full.id
         request_obj_full.sender_id = None
-        request_obj_full.recipient = users.get(str(request_obj.recipient_id))
+        request_obj_full.recipient = users.get(str(request_obj_full.recipient_id))
         request_obj_full.recipient_id = None
 
     response = {}
@@ -224,35 +224,41 @@ async def delete_request(
 
 
 @router.post("/invite", status_code=status.HTTP_201_CREATED)
-async def invite_user_to_group(
-        request: api_request_classes.InviteToGroupRequest,
+async def invite_users_to_group(
+        request: api_request_classes.InviteToGroupRequestBulk,
         user: Annotated[models.User, Depends(users.get_current_user)]
 ):
     """
-    # Send group invite request
-    Sends a group invite request to a user and saves it in the database.
+    # Send group invite requests
+    Sends group invite requests to multiple users and saves them in the database.
     """
-    recipient = db["users"].find_one({"username": request.username})
-    if not recipient:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                            detail="User not found")
-
-    if recipient["_id"] in db["groups"].find_one({"_id": request.group_id})["member_ids"]:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
-                            detail="User is already a member of the group")
-
-    invite_request = models.Request(
-        sender_id=user.id,
-        recipient_id=recipient["_id"],
-        group_id=request.group_id,
-        type=models.RequestType.INVITE_TO_GROUP
-    )
-
-    invite_request_dict = invite_request.model_dump(by_alias=True)
-    invite_request_dict.pop("_id", None)
+    recipients_cursor = db["users"].find({"username": {"$in": request.usernames}})
+    recipients = list(recipients_cursor)
+    recipient_map = {recipient["username"]: recipient for recipient in recipients}
 
     try:
-        db["requests"].insert_one(invite_request_dict)
+        group = db["groups"].find_one({"_id": request.group_id})
+    except Exception as exception:
+        raise HTTPException(status_code=status.HTTP_424_FAILED_DEPENDENCY, detail=str(exception))
+
+    if not group:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Group not found")
+
+    invite_requests = []
+    for username in request.usernames:
+        recipient = recipient_map[username]
+        invite_request = models.Request(
+            sender_id=user.id,
+            recipient_id=recipient["_id"],
+            group_id=request.group_id,
+            type=models.RequestType.INVITE_TO_GROUP
+        )
+        invite_request_dict = invite_request.model_dump(by_alias=True)
+        invite_request_dict.pop("_id", None)
+        invite_requests.append(invite_request_dict)
+
+    try:
+        db["requests"].insert_many(invite_requests)
     except Exception as exception:
         raise HTTPException(status_code=status.HTTP_424_FAILED_DEPENDENCY,
                             detail=str(exception))

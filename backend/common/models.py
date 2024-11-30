@@ -29,6 +29,9 @@ class UserSummary(BaseModel):
     username: str
     full_name: Optional[str]
 
+class IsUserInGroup(BaseModel):
+    in_group: bool
+
 
 class Group(BaseModel):
     id: Optional[PydanticObjectId] = Field(alias="_id", default=None)
@@ -123,6 +126,8 @@ class Request(BaseModel):
     id: Optional[PydanticObjectId] = Field(alias="_id", default=None)
     group_id: PydanticObjectId
     sender_id: PydanticObjectId
+    sender: Optional[UserSummary] = None
+    recipient: Optional[UserSummary] = None
     recipient_id: PydanticObjectId
     date: datetime = Field(default_factory=datetime.now)
     type: RequestType = RequestType.JOIN_GROUP
@@ -136,7 +141,7 @@ class FullInfoRequest(BaseModel):
     id: Optional[PydanticObjectId] = Field(alias="_id", default=None)
     group_id: PydanticObjectId
     sender: UserSummary
-    recipiend: UserSummary
+    recipient: UserSummary
     date: datetime = Field(default_factory=datetime.now)
     type: RequestType = RequestType.JOIN_GROUP
     status: RequestStatus = RequestStatus.PENDING
