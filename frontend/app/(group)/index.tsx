@@ -62,15 +62,17 @@ const Group: React.FC = () => {
 
   const accept = async (req_id: string) => {
     try {
-      setShouldNotDisplayLoading(true)
+      setShouldNotDisplayLoading(true);
       await acceptJoin(req_id, token!);
       setRequests({
         sent: [],
         received: [],
       });
       await refreshUser();
-      setShouldNotDisplayLoading(false)
-    } catch (err: any) {}
+      setShouldNotDisplayLoading(false);
+    } catch (err: any) {
+      setMessage(err.message);
+    }
   };
   const reject = async (req_id: string) => {
     try {
@@ -127,11 +129,6 @@ const Group: React.FC = () => {
     } catch (error: any) {
       setMessage({ error: true, text: error.message });
     }
-    // setGroupDetails((prev) => ({
-    //   ...prev,
-    //   description: editedDetails.description,
-    //   name: editedDetails.name,
-    // }));
   };
 
   useEffect(() => {
@@ -150,7 +147,10 @@ const Group: React.FC = () => {
         setShouldNotDisplayLoading(false);
         setRequests(reqs);
       } catch (err) {
-        // router.replace("/(account)");
+        setMessage({
+          error: true,
+          text: "Failed to refresh user. Please log out and try again.",
+        });
       }
     };
     f();
@@ -166,7 +166,12 @@ const Group: React.FC = () => {
   const discard = () => {
     setEditModalOpen(false);
   };
-  if (isLoading() && !editModalOpen && !shouldNotDisplayLoading)
+  if (
+    isLoading() &&
+    !editModalOpen &&
+    !inviteModalOpen &&
+    !shouldNotDisplayLoading
+  )
     return <CenteredLogoLoadingComponent />;
   return (
     <View style={styles.container}>

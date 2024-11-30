@@ -203,13 +203,23 @@ def get_user_by_username(username: str):
                             detail="User not found")
     return models.UserSummary(**user)
 
+
 @router.get("/member_in_group/{username}/{group_id}", status_code=status.HTTP_200_OK,
             response_model=models.IsUserInGroup)
-def get_user_member_in_group(username: str, group_id: str):
+def get_user_member_in_group(username: str, group_id: PydanticObjectId):
     """
     # Check if user is in group or has a pending request
     This endpoint returns whether a user is a member of the group or has a related request, using username.
     """
+    try:
+        print(f'getting group id {group_id}')
+        group = db["groups"].find_one({"_id": group_id})
+    except Exception as exception:
+        raise HTTPException(status_code=status.HTTP_424_FAILED_DEPENDENCY, detail=str(exception))
+    print(group)
+    if not group:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Group not found")
+    
     try:
         user = db["users"].find_one({"username": username})
     except Exception as exception:
@@ -220,14 +230,11 @@ def get_user_member_in_group(username: str, group_id: str):
     
     user_id = user["_id"]
 
+    
+    if user_id in group["member_ids"]:
+        return {"in_group": True, "has_request": False}
+    
     try:
-        group = db["groups"].find_one({"_id": group_id})
-        if not group:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Group not found")
-        
-        if user_id in group["member_ids"]:
-            return {"in_group": True, "has_request": False}
-        
         request_exists = db["requests"].find_one({
             "group_id": group_id,
             "$or": [
@@ -235,11 +242,11 @@ def get_user_member_in_group(username: str, group_id: str):
                 {"recipient_id": user_id}
             ]
         })
-        
-        if request_exists:
-            return {"in_group": False, "has_request": True}
-
-        return {"in_group": False, "has_request": False}
-    
     except Exception as exception:
         raise HTTPException(status_code=status.HTTP_424_FAILED_DEPENDENCY, detail=str(exception))
+    if request_exists:
+        return {"in_group": False, "has_request": True}
+
+    return {"in_group": False, "has_request": False}
+    
+    

@@ -53,7 +53,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       setLoading(false);
     } catch (error) {
       const err = error as ApiError;
-      Alert.alert("Failed!", "Could not log in. Please try again", [
+      Alert.alert("Failed!", "Could not fetch user information. Please try again", [
         { text: "OK", onPress: logout },
       ]);
     }

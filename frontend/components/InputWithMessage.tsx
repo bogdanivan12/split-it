@@ -1,15 +1,17 @@
-import {
-  View,
-  TextInput,
-  TextStyle,
-  ViewStyle,
-} from "react-native";
+import { View, TextInput, TextStyle, ViewStyle } from "react-native";
 import React, { ReactNode } from "react";
 import { generalStyles } from "@/constants/SharedStyles";
 import { Colors } from "@/constants/Theme";
 import { Message } from "./Message";
 
-export default function InputWithMessage({
+export type InputErrorMessage = {
+  text: string;
+  color?: string;
+  icon?: ReactNode;
+  style?: TextStyle;
+};
+
+export function InputWithMessage({
   id,
   style,
   containerStyle,
@@ -30,12 +32,7 @@ export default function InputWithMessage({
   password?: boolean;
   onFocus?: () => void;
   onBlur?: () => void;
-  errorMessages?: {
-    text: string;
-    color?: string;
-    icon?: ReactNode;
-    style?: TextStyle;
-  }[];
+  errorMessages?: InputErrorMessage[];
 }) {
   return (
     <View style={containerStyle}>

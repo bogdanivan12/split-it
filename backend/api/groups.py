@@ -84,7 +84,7 @@ async def get_group(
     except Exception as exception:
         raise HTTPException(status_code=status.HTTP_424_FAILED_DEPENDENCY,
                             detail=str(exception))
-
+    print(group_dict)
     if not group_dict:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail="Group not found")
@@ -203,7 +203,8 @@ async def join_group(
     existing_request = db["requests"].find_one({
         "group_id": group_dict["_id"],
         "sender_id": user.id,
-        "type": models.RequestType.JOIN_GROUP
+        "type": models.RequestType.JOIN_GROUP,
+        "status": models.RequestStatus.PENDING
     })
     if existing_request:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT,
@@ -212,7 +213,8 @@ async def join_group(
     existing_request = db["requests"].find_one({
         "group_id": group_dict["_id"],
         "recipiend_id": user.id,
-        "type": models.RequestType.JOIN_GROUP
+        "type": models.RequestType.JOIN_GROUP,
+        "status": models.RequestStatus.PENDING
     })
     if existing_request:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT,

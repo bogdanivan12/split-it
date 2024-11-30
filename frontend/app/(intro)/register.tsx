@@ -16,7 +16,7 @@ import { signUpStyles as styles } from "@/constants/SharedStyles";
 import { useRegister } from "@/utils/hooks/useRegister";
 import { CenteredLogoLoadingComponent } from "@/components/LogoLoadingComponent";
 import { useIsFocused } from "@react-navigation/native";
-import InputWithMessage from "@/components/InputWithMessage";
+import { InputWithMessage } from "@/components/InputWithMessage";
 import {
   EMPTY_VALIDATE_REGISTER_RETURN,
   ValidateRegisterReturn,

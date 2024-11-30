@@ -3,9 +3,7 @@ import {
   Text,
   StyleSheet,
   Pressable,
-  Modal,
   TextInput,
-  FlatList,
   TouchableOpacity,
   TouchableWithoutFeedback,
   Keyboard,
@@ -26,13 +24,23 @@ import { ErrorIcon, SuccessIcon } from "@/components/Icons";
 import { useIsFocused } from "@react-navigation/native";
 import { CenteredLogoLoadingComponent } from "@/components/LogoLoadingComponent";
 import { ShortGroup } from "@/types/Group.types";
+import {
+  InputErrorMessage,
+  InputWithMessage,
+} from "@/components/InputWithMessage";
 
 const Groups: React.FC = () => {
   const [modalVisible, setModalVisible] = useState<boolean>(false);
   const [joinModalVisible, setJoinModalVisible] = useState<boolean>(false);
   const [groupName, setGroupName] = useState<string>("");
-  const [groupCode, setGroupCode] = useState<string>("");
   const [groupDescription, setGroupDescription] = useState<string>("");
+  const [createErrorMessages, setCreateErrorMessages] = useState<
+    InputErrorMessage[]
+  >([]);
+  const [groupCode, setGroupCode] = useState<string>("");
+  const [joinErrorMessages, setJoinErrorMessages] = useState<
+    InputErrorMessage[]
+  >([]);
   const [groups, setGroups] = useState<ShortGroup[]>([]);
 
   const [message, setMessage] = useState<{
@@ -63,22 +71,18 @@ const Groups: React.FC = () => {
   const toggleModal = () => {
     setGroupDescription("");
     setGroupName("");
+    setCreateErrorMessages([]);
     setModalVisible((prev) => !prev);
   };
   const toggleJoinModal = () => {
     setGroupCode("");
+    setJoinErrorMessages([]);
     setJoinModalVisible((prev) => !prev);
   };
 
   const addGroup = async () => {
     if (groupName.trim() === "") {
-      Alert.alert("Required", "The name is required to create a group", [
-        {
-          text: "OK",
-          onPress: () => {},
-          style: "cancel",
-        },
-      ]);
+      setCreateErrorMessages([{ text: "Required", icon: ErrorIcon }]);
       return;
     }
     try {
@@ -99,25 +103,18 @@ const Groups: React.FC = () => {
 
   const joinGroup = async () => {
     if (groupCode.trim() === "") {
-      Alert.alert("Required", "Please fill in the group code", [
-        {
-          text: "OK",
-          onPress: () => {},
-          style: "cancel",
-        },
-      ]);
+      setJoinErrorMessages([{ text: "Required", icon: ErrorIcon }]);
+      setGroupCode("");
       return;
     }
-
     try {
       await join(groupCode, token!);
       setMessage({ error: false, text: "Successfully sent join request" });
       await refreshUser();
-      toggleJoinModal();
     } catch (err: any) {
       setMessage({ error: true, text: err.message });
-      toggleModal();
     }
+    toggleJoinModal();
   };
 
   if (!user) return null;
@@ -217,12 +214,15 @@ const Groups: React.FC = () => {
                       style={{ marginTop: 10 }}
                       onStartShouldSetResponder={() => true}
                     >
-                      <TextInput
-                        style={modalStyles.input}
+                      <InputWithMessage
                         placeholder="Group Name (required)"
                         value={groupName}
-                        onChangeText={setGroupName}
-                        placeholderTextColor={Colors.theme1.inputPlaceholder}
+                        onChangeText={(t) => {
+                          setGroupName(t);
+                          setCreateErrorMessages([]);
+                        }}
+                        errorMessages={createErrorMessages}
+                        id="create"
                       />
 
                       <TextInput
@@ -269,12 +269,15 @@ const Groups: React.FC = () => {
                     style={{ marginTop: 10 }}
                     onStartShouldSetResponder={() => true}
                   >
-                    <TextInput
-                      style={modalStyles.input}
+                    <InputWithMessage
                       placeholder="Group Code"
                       value={groupCode}
-                      onChangeText={setGroupCode}
-                      placeholderTextColor={Colors.theme1.inputPlaceholder}
+                      onChangeText={(t) => {
+                        setGroupCode(t);
+                        setJoinErrorMessages([]);
+                      }}
+                      errorMessages={joinErrorMessages}
+                      id="join"
                     />
                   </View>
 

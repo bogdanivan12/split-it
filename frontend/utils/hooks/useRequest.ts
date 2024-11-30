@@ -86,6 +86,7 @@ export const useRequest = () => {
       });
     } catch (error) {
       const err = error as ApiError;
+      console.log(err.body)
       throw Error("Could not check if user exists");
     } finally {
       setLoading(false);

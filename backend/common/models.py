@@ -31,6 +31,7 @@ class UserSummary(BaseModel):
 
 class IsUserInGroup(BaseModel):
     in_group: bool
+    has_request: bool
 
 
 class Group(BaseModel):

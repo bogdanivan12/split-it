@@ -72,7 +72,7 @@ export const InviteModal = ({
     try {
       const userExists = await checkIfUserExists(searchValue);
       if (userExists.in_group) {
-        errorMessage = "User already in group.";
+        errorMessage = "User is already in group.";
       } else if (userExists.has_request) {
         errorMessage = "User already has a pending request in this group.";
       }
@@ -82,8 +82,10 @@ export const InviteModal = ({
         errorMessage = "User not found.";
       }
     }
-    if (errorMessage) {
+    console.log(errorMessage)
+    if (errorMessage !== null) {
       setMessage(errorMessage);
+      setSearchValue("");
       return;
     }
     setSearchValue("");

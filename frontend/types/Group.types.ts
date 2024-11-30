@@ -1,5 +1,3 @@
-// API response types
-
 export type CreateGroupParams = {
   name: string;
   description: string;
@@ -30,7 +28,7 @@ export type FullUsersApiResponse = {
   username: string;
 };
 
-// frontend types
+
 
 export type UserInGroup = {
   id: string;
