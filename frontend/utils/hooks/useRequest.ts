@@ -48,6 +48,22 @@ export const useRequest = () => {
     }
   };
 
+  const getInvites = async (token: string, userId: string) => {
+    try {
+      setLoading(true);
+      const allRequests = await getAll(token);
+      return allRequests
+        ? allRequests.JOIN_GROUP.sent
+            .filter((r) => r.recipient._id === userId)
+            .map((r) => new Req(r))
+        : [];
+    } catch (error: any) {
+      throw Error("Could not get invites");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const invite = async (body: InviteParams, token: string) => {
     try {
       setLoading(true);

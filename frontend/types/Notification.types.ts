@@ -1,6 +1,6 @@
-export type Invitation = {
-  inviter: string;
-  invitee: string;
+export type GroupInvitation = {
+  sender: string;
+  requestId: string;
   groupId: string;
   groupName: string;
 };
