@@ -93,7 +93,7 @@ export const useGroup = () => {
     }
   };
 
-  const update = async (data: UpdateGroupParams, token: string) => {
+  const update = async (data: Partial<UpdateGroupParams>, token: string) => {
     try {
       setLoading(true);
       await fetcher<GroupApiResponse>({
