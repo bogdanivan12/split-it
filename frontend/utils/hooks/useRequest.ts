@@ -32,16 +32,24 @@ export const useRequest = () => {
       throw Error("Could not get requests");
     }
   };
-  const getByGroup = async (groupId: string, token: string) => {
+  const getByGroup = async (
+    groupId: string,
+    token?: string
+  ): Promise<{ sent: Req[]; received: Req[] }> => {
     try {
       setLoading(true);
+      if (!token) return { sent: [], received: [] };
       const allRequests = await getAll(token);
-      const sentRequests = allRequests.JOIN_GROUP.sent.filter(
-        (r) => r.group_id === groupId && r.status === "PENDING"
-      );
-      const receivedRequests = allRequests.JOIN_GROUP.received.filter(
-        (r) => r.group_id === groupId && r.status === "PENDING"
-      );
+      const sentRequests = allRequests.JOIN_GROUP
+        ? allRequests.JOIN_GROUP.sent.filter(
+            (r) => r.group_id === groupId && r.status === "PENDING"
+          )
+        : [];
+      const receivedRequests = allRequests.JOIN_GROUP
+        ? allRequests.JOIN_GROUP.received.filter(
+            (r) => r.group_id === groupId && r.status === "PENDING"
+          )
+        : [];
       const ids = sentRequests
         .map((r) => r.recipient_id)
         .concat(receivedRequests.map((r) => r.sender_id));
@@ -65,9 +73,10 @@ export const useRequest = () => {
   };
 
   const getInvites = async (
-    token: string,
-    userId: string
+    userId?: string,
+    token?: string
   ): Promise<GroupInvitation[]> => {
+    if (!(userId && token)) return [];
     try {
       setLoading(true);
       const allRequests = await getAll(token);

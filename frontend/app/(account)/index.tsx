@@ -117,9 +117,9 @@ export default function Profile() {
     playAnimationTimeout(() => {
       update(
         {
-          email: editedUser.email,
-          full_name: editedUser.fullName,
-          phone_number: editedUser.phoneNumber,
+          ...(editedUser.email !== user?.email && {email: editedUser.email}),
+          ...(editedUser.fullName !== user?.fullName && {full_name: editedUser.fullName}),
+          ...(editedUser.phoneNumber !== user?.phoneNumber && {phone_number: editedUser.phoneNumber}),
         },
         token!
       )
@@ -128,7 +128,6 @@ export default function Profile() {
           const err = error as ApiError;
           console.log(`error when handling save ${JSON.stringify(err)}`);
         });
-      // some loading icon near, instead of the pen, display the edit while the update is loading
       setIsEditing(false);
     });
   };

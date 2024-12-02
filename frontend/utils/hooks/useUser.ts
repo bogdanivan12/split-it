@@ -7,8 +7,9 @@ import { UserSummary, UserSummaryApiResponse } from "@/types/Group.types";
 export const useUser = () => {
   const [loading, setLoading] = useState(false);
 
-  const update = async (data: UpdateAccountParams, token: string) => {
+  const update = async (data: Partial<UpdateAccountParams>, token: string) => {
     try {
+      if (Object.keys(data).length === 0) return;
       setLoading(true);
       await fetcher<UserApiResponse>({
         endpoint: `/api/v1/users/me`,

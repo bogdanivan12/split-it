@@ -75,7 +75,7 @@ export default function Notifications() {
   useEffect(() => {
     const f = async () => {
       try {
-        const invites = await getInvites(token!, user!.id);
+        const invites = await getInvites(user!.id, token!);
         setInvitations(invites);
       } catch (err: any) {
         setMessage(err.message);

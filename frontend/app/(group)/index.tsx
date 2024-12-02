@@ -124,8 +124,13 @@ const Group: React.FC = () => {
       await update(
         {
           _id: groupDetails.id,
-          ...(editedDetails.description !== groupDetails.description && {description: editedDetails.description}),
-          ...(editedDetails.name !== groupDetails.name && {description: editedDetails.name}),
+          bill_ids: [],
+          description: editedDetails.description,
+          member_ids: groupDetails.members
+            .map((m) => m.id)
+            .concat(groupDetails.owner.id),
+          name: editedDetails.name,
+          owner_id: groupDetails.owner.id,
         },
         token!
       );

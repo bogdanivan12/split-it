@@ -38,7 +38,7 @@ export type RequestsApiResponse = Record<
   {
     sent: RequestApiResponse[];
     received: RequestApiResponse[];
-  }
+  } | undefined
 >;
 
 export class Request {

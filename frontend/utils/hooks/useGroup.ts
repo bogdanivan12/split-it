@@ -73,7 +73,7 @@ export const useGroup = () => {
     }
   };
 
-  const getAll = async (token: string) => {
+  const getAll = async (token?: string) => {
     try {
       if (!token) return [];
       setLoading(true);
@@ -93,7 +93,7 @@ export const useGroup = () => {
     }
   };
 
-  const update = async (data: Partial<UpdateGroupParams>, token: string) => {
+  const update = async (data: UpdateGroupParams, token: string) => {
     try {
       setLoading(true);
       await fetcher<GroupApiResponse>({
