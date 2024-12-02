@@ -10,7 +10,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from backend.api import users
 from backend.common import models
 from backend.common import config_info
-from backend.api import api_request_classes as api_req
+from backend.api import api_request_classes as api_req, api_response_classes as api_res
 
 router = APIRouter(prefix="/api/v1/groups", tags=["groups"])
 db = config_info.get_db()
@@ -65,7 +65,7 @@ async def create_group(
 
 
 @router.get("/{group_id}", status_code=status.HTTP_200_OK,
-            response_model=models.FullInfoGroup)
+            response_model=api_res.FullInfoGroup)
 async def get_group(
         group_id: PydanticObjectId,
         user: Annotated[models.User, Depends(users.get_current_user)]
@@ -97,7 +97,7 @@ async def get_group(
     try:
         users_cursor = db["users"].find({"_id": {"$in": group.member_ids}}, {"_id": 1, "username": 1, "full_name": 1})
         users = list(users_cursor)
-        user_objects = [models.UserSummary(**user) for user in users]
+        user_objects = [api_res.UserSummary(**user) for user in users]
     except Exception as exception:
         raise HTTPException(status_code=status.HTTP_424_FAILED_DEPENDENCY, detail=str(exception))
 
@@ -112,7 +112,7 @@ async def get_group(
     )
 
 @router.post("/get_groups", status_code=status.HTTP_200_OK,
-             response_model=List[models.GroupSummary])
+             response_model=List[api_res.GroupSummary])
 async def get_groups(
         group_ids: List[PydanticObjectId],
         user: Annotated[models.User, Depends(users.get_current_user)]
@@ -267,7 +267,7 @@ async def join_group(
                             detail=str(e))
 
 
-@router.get("/{group_id}/users", status_code=status.HTTP_200_OK, response_model=List[models.UserSummary])
+@router.get("/{group_id}/users", status_code=status.HTTP_200_OK, response_model=List[api_res.UserSummary])
 async def get_users_by_group_id(
     group_id: PydanticObjectId,
     user: Annotated[models.User, Depends(users.get_current_user)]
@@ -291,5 +291,5 @@ async def get_users_by_group_id(
     except Exception as exception:
         raise HTTPException(status_code=status.HTTP_424_FAILED_DEPENDENCY, detail=str(exception))
 
-    user_objects = [models.UserSummary(**user) for user in users]
+    user_objects = [api_res.UserSummary(**user) for user in users]
     return user_objects

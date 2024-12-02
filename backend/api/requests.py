@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from backend.common import models
 from backend.api.groups import db
-from backend.api import users, api_request_classes
+from backend.api import users, api_request_classes, api_response_classes
 from backend.api.api_response_classes import GetRequestsResponseForStatus
 
 
@@ -45,7 +45,7 @@ async def get_requests(
             {"_id": {"$in": list(user_ids)}},
             {"_id": 1, "username": 1, "full_name": 1}
         )
-        users = {str(user["_id"]): models.UserSummary(**user) for user in users_cursor}
+        users = {str(user["_id"]): api_response_classes.UserSummary(**user) for user in users_cursor}
         group_cursor = db["groups"].find(
             {"_id": {"$in": list(group_ids)}},
             {"_id": 1, "name": 1}
@@ -76,7 +76,7 @@ async def get_requests(
 
 
 @router.get("/{request_id}", status_code=status.HTTP_200_OK,
-            response_model=models.FullInfoRequest)
+            response_model=api_response_classes.FullInfoRequest)
 async def get_request(
         request_id: PydanticObjectId,
         user: Annotated[models.User, Depends(users.get_current_user)]

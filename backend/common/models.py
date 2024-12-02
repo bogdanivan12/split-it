@@ -23,17 +23,6 @@ class User(BaseModel):
 class UserInDB(User):
     hashed_password: str
 
-
-class UserSummary(BaseModel):
-    id: PydanticObjectId = Field(alias="_id")
-    username: str
-    full_name: Optional[str]
-
-class IsUserInGroup(BaseModel):
-    in_group: bool
-    has_request: bool
-
-
 class Group(BaseModel):
     id: Optional[PydanticObjectId] = Field(alias="_id", default=None)
     name: str = Field(min_length=5, max_length=30)
@@ -43,30 +32,9 @@ class Group(BaseModel):
     bill_ids: Optional[List[PydanticObjectId]] = Field(default_factory=list)
     join_code: Optional[str] = Field(min_length=4, max_length=20, default=None)
 
-class GroupSummary(BaseModel):
-    id: Optional[PydanticObjectId] = Field(alias="_id", default=None)
-    name: str = Field(min_length=5, max_length=30)
-
-    class Config:
-        json_encoders = {PydanticObjectId: str}
-
-class FullInfoGroup(BaseModel):
-    id: Optional[PydanticObjectId] = Field(alias="_id", default=None)
-    name: str = Field(min_length=5, max_length=30)
-    description: Optional[str] = Field(max_length=100, default="")
-    owner_id: Optional[PydanticObjectId] = Field(default=None)
-    members: List[UserSummary] = Field(default_factory=list)
-    bill_ids: Optional[List[PydanticObjectId]] = Field(default_factory=list)
-    join_code: Optional[str] = Field(min_length=4, max_length=20, default=None)
-
-    class Config:
-        json_encoders = {PydanticObjectId: str}
-
-
 class InitialPayer(BaseModel):
     user_id: str
     amount: float
-
 
 class Product(BaseModel):
     name: str
@@ -139,20 +107,7 @@ class Request(BaseModel):
     class Config:
         json_encoders = {PydanticObjectId: str}
 
-class FullInfoRequest(BaseModel):
-    id: Optional[PydanticObjectId] = Field(alias="_id", default=None)
-    group_id: Optional[PydanticObjectId] = None
-    group: Optional[GroupSummary] = None
-    sender: Optional[UserSummary] = None
-    recipient: Optional[UserSummary] = None
-    sender_id: Optional[PydanticObjectId] = None
-    recipient_id: Optional[PydanticObjectId] = None
-    date: datetime = Field(default_factory=datetime.now)
-    type: RequestType = RequestType.JOIN_GROUP
-    status: RequestStatus = RequestStatus.PENDING
 
-    class Config:
-        json_encoders = {PydanticObjectId: str}
 
 class Token(BaseModel):
     access_token: str

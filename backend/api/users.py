@@ -11,7 +11,7 @@ from fastapi import HTTPException, APIRouter, Form, Depends
 from backend.api import auth
 from backend.common import models
 from backend.common import config_info
-from backend.api import api_request_classes as api_req
+from backend.api import api_request_classes as api_req, api_response_classes as api_res
 
 router = APIRouter(prefix="/api/v1/users", tags=["users"])
 db = config_info.get_db()
@@ -186,7 +186,7 @@ async def delete_user(user: models.User = Depends(get_current_user)):
 
 
 @router.post("/get_by_usernames", status_code=status.HTTP_200_OK,
-             response_model=list[models.UserSummary])
+             response_model=list[api_res.UserSummary])
 def get_by_usernames(usernames: list[str]):
     """
     # Get users by usernames
@@ -207,11 +207,11 @@ def get_by_usernames(usernames: list[str]):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail="No users found for the provided usernames")
     
-    return [models.UserSummary(**user) for user in users]
+    return [api_res.UserSummary(**user) for user in users]
 
 
 @router.post("/get_by_ids", status_code=status.HTTP_200_OK,
-             response_model=list[models.UserSummary])
+             response_model=list[api_res.UserSummary])
 def get_by_ids(ids: list[PydanticObjectId]):
     """
     # Get users by usernames
@@ -232,11 +232,11 @@ def get_by_ids(ids: list[PydanticObjectId]):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail="No users found for the provided ids")
     
-    return [models.UserSummary(**user) for user in users]
+    return [api_res.UserSummary(**user) for user in users]
 
 
 @router.get("/member_in_group/{username}/{group_id}", status_code=status.HTTP_200_OK,
-            response_model=models.IsUserInGroup)
+            response_model=api_res.IsUserInGroup)
 def get_user_member_in_group(username: str, group_id: PydanticObjectId):
     """
     # Check if user is in group or has a pending request
