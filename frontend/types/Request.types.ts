@@ -1,4 +1,5 @@
-import { UserSummaryApiResponse, UserSummary } from "./Group.types";
+import { GroupSummary, GroupSummaryApiResponse } from "./Group.types";
+import { UserSummary, UserSummaryApiResponse } from "./User.types";
 
 export type InviteParams = {
   usernames: string[];
@@ -17,9 +18,9 @@ export type MemberInGroup = {
 
 export type RequestApiResponse = {
   _id: string;
-  group_id: string;
-  sender_id: string;
-  recipient_id: string;
+  group: GroupSummaryApiResponse;
+  sender: UserSummaryApiResponse;
+  recipient: UserSummaryApiResponse;
   date: string;
   type: RequestType;
   status: RequestStatus;
@@ -35,30 +36,29 @@ export type RequestStatus = "PENDING" | "ACCEPTED" | "DECLINED";
 
 export type RequestsApiResponse = Record<
   RequestType,
-  {
-    sent: RequestApiResponse[];
-    received: RequestApiResponse[];
-  } | undefined
+  | {
+      sent: RequestApiResponse[];
+      received: RequestApiResponse[];
+    }
+  | undefined
 >;
 
 export class Request {
   id!: string;
-  groupId!: string;
+  group!: GroupSummary;
   sender!: UserSummary;
   recipient!: UserSummary;
   date!: string;
   type!: RequestType;
   status!: string;
 
-  constructor(res: RequestApiResponse, users: UserSummary[]) {
-    const usersRecord: Record<string, UserSummary> = {};
-    users.forEach((u) => (usersRecord[u.id] = u));
+  constructor(res: RequestApiResponse) {
     return {
       date: res.date,
-      groupId: res.group_id,
+      group: new GroupSummary(res.group),
       id: res._id,
-      recipient: usersRecord[res.recipient_id],
-      sender: usersRecord[res.sender_id],
+      recipient: new UserSummary(res.recipient),
+      sender: new UserSummary(res.sender),
       status: res.status,
       type: res.type,
     };

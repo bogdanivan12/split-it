@@ -1,8 +1,7 @@
-import { UpdateAccountParams, User, UserApiResponse } from "@/types/User.types";
+import { UpdateAccountParams, User, UserApiResponse, UserSummary, UserSummaryApiResponse } from "@/types/User.types";
 import { useState } from "react";
 import { fetcher } from "../fetcher";
 import { ApiError } from "@/types/ApiError.types";
-import { UserSummary, UserSummaryApiResponse } from "@/types/Group.types";
 
 export const useUser = () => {
   const [loading, setLoading] = useState(false);

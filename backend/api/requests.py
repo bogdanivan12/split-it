@@ -29,10 +29,38 @@ async def get_requests(
                             detail=str(exception))
 
     request_objects = [
-        models.Request(**request)
+        models.FullInfoRequest(**request)
         for request in requests
         if user.id in [request["sender_id"], request["recipient_id"]]
     ]
+
+    user_ids = {request.sender_id for request in request_objects}.union(
+        {request.recipient_id for request in request_objects}
+    )
+
+    group_ids = {request.group_id for request in request_objects}
+
+    try:
+        users_cursor = db["users"].find(
+            {"_id": {"$in": list(user_ids)}},
+            {"_id": 1, "username": 1, "full_name": 1}
+        )
+        users = {str(user["_id"]): models.UserSummary(**user) for user in users_cursor}
+        group_cursor = db["groups"].find(
+            {"_id": {"$in": list(group_ids)}},
+            {"_id": 1, "name": 1}
+        )
+        groups = {str(group["_id"]): models.GroupSummary(**group) for group in group_cursor}
+    except Exception as exception:
+        raise HTTPException(status_code=status.HTTP_424_FAILED_DEPENDENCY, detail=str(exception))
+
+    for request_obj_full in request_objects:
+        request_obj_full.sender = users.get(str(request_obj_full.sender_id))
+        request_obj_full.sender_id = None
+        request_obj_full.recipient = users.get(str(request_obj_full.recipient_id))
+        request_obj_full.recipient_id = None
+        request_obj_full.group = groups.get(str(request_obj_full.group_id))
+        request_obj_full.group_id = None
 
     response = {}
     for request_obj in request_objects:
@@ -48,7 +76,7 @@ async def get_requests(
 
 
 @router.get("/{request_id}", status_code=status.HTTP_200_OK,
-            response_model=models.Request)
+            response_model=models.FullInfoRequest)
 async def get_request(
         request_id: PydanticObjectId,
         user: Annotated[models.User, Depends(users.get_current_user)]

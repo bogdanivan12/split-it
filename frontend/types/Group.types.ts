@@ -1,3 +1,5 @@
+import { UserSummary, UserSummaryApiResponse } from "./User.types";
+
 export type CreateGroupParams = {
   name: string;
   description: string;
@@ -17,7 +19,7 @@ export type GroupApiResponse = {
   name: string;
   description?: string;
   owner_id: string;
-  member_ids: string[];
+  members: UserSummaryApiResponse[];
   bill_ids: string[];
   join_code: string;
 };
@@ -25,12 +27,6 @@ export type GroupApiResponse = {
 export type GroupSummaryApiResponse = {
   _id: string;
   name: string;
-};
-
-export type UserSummaryApiResponse = {
-  _id: string;
-  full_name: string;
-  username: string;
 };
 
 export class GroupSummary {
@@ -45,20 +41,6 @@ export class GroupSummary {
   }
 }
 
-export class UserSummary {
-  id!: string;
-  fullName!: string;
-  username!: string;
-
-  constructor(us: UserSummaryApiResponse) {
-    return {
-      username: us.username,
-      fullName: us.full_name,
-      id: us._id,
-    };
-  }
-}
-
 export class Group {
   id!: string;
   name!: string;
@@ -67,12 +49,12 @@ export class Group {
   members!: UserSummary[];
   joinCode!: string;
 
-  constructor(res: GroupApiResponse, members: UserSummaryApiResponse[]) {
-    const owner = members.find((m) => m._id === res.owner_id)!;
+  constructor(res: GroupApiResponse) {
+    const owner = res.members.find((m) => m._id === res.owner_id)!;
     return {
       id: res._id,
       description: res.description || "",
-      members: members
+      members: res.members
         .filter((m) => m._id !== res.owner_id)
         .map((m) => ({
           fullName: m.full_name,

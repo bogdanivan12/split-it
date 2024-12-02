@@ -9,14 +9,9 @@ import {
 } from "@/types/Request.types";
 import { ApiError } from "@/types/ApiError.types";
 import { GroupInvitation } from "@/types/Notification.types";
-import { useGroup } from "./useGroup";
-import { useUser } from "./useUser";
 
 export const useRequest = () => {
   const [loading, setLoading] = useState(false);
-
-  const { getGroups } = useGroup();
-  const { getByIds } = useUser();
 
   const getAll = async (token: string) => {
     try {
@@ -29,6 +24,7 @@ export const useRequest = () => {
       });
     } catch (error) {
       const err = error as ApiError;
+      console.log(err.message)
       throw Error("Could not get requests");
     }
   };
@@ -40,32 +36,20 @@ export const useRequest = () => {
       setLoading(true);
       if (!token) return { sent: [], received: [] };
       const allRequests = await getAll(token);
-      const sentRequests = allRequests.JOIN_GROUP
-        ? allRequests.JOIN_GROUP.sent.filter(
-            (r) => r.group_id === groupId && r.status === "PENDING"
-          )
-        : [];
-      const receivedRequests = allRequests.JOIN_GROUP
-        ? allRequests.JOIN_GROUP.received.filter(
-            (r) => r.group_id === groupId && r.status === "PENDING"
-          )
-        : [];
-      const ids = sentRequests
-        .map((r) => r.recipient_id)
-        .concat(receivedRequests.map((r) => r.sender_id));
-      const allUsers = await getByIds(ids, token);
+      console.log(JSON.stringify(allRequests))
       return allRequests && allRequests.JOIN_GROUP
         ? {
             sent: allRequests.JOIN_GROUP.sent
-              .filter((r) => r.group_id === groupId && r.status === "PENDING")
-              .map((r) => new Req(r, allUsers)),
+              .filter((r) => r.group._id === groupId && r.status === "PENDING")
+              .map((r) => new Req(r)),
             received: allRequests.JOIN_GROUP.received
-              .filter((r) => r.group_id === groupId && r.status === "PENDING")
-              .map((r) => new Req(r, allUsers)),
+              .filter((r) => r.group._id === groupId && r.status === "PENDING")
+              .map((r) => new Req(r)),
           }
         : { sent: [], received: [] };
     } catch (error) {
       const err = error as ApiError;
+      console.log(err.message)
       throw Error("Could not get requests");
     } finally {
       setLoading(false);
@@ -83,26 +67,14 @@ export const useRequest = () => {
       const inviteRequests =
         allRequests && allRequests.INVITE_TO_GROUP
           ? allRequests.INVITE_TO_GROUP.received.filter(
-              (r) => r.recipient_id === userId && r.status === "PENDING"
+              (r) => r.recipient._id === userId && r.status === "PENDING"
             )
           : [];
       if (inviteRequests.length === 0) return [];
-      const groupNames: Record<string, string> = {};
-      const groupSummaries = await getGroups(
-        inviteRequests.map((r) => r.group_id),
-        token
-      );
-      groupSummaries.forEach((g) => (groupNames[g.id] = g.name));
-      const userSummaries = await getByIds(
-        inviteRequests.map((r) => r.sender_id),
-        token
-      );
-      const userNames: Record<string, string> = {};
-      userSummaries.forEach((u) => (userNames[u.id] = u.username));
       return inviteRequests.map((i) => ({
-        groupName: groupNames[i.group_id],
+        groupName: i.group.name,
         requestId: i._id,
-        sender: userNames[i.sender_id],
+        sender: i.sender.username,
       }));
     } catch (error: any) {
       console.log(error.message);

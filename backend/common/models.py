@@ -139,6 +139,21 @@ class Request(BaseModel):
     class Config:
         json_encoders = {PydanticObjectId: str}
 
+class FullInfoRequest(BaseModel):
+    id: Optional[PydanticObjectId] = Field(alias="_id", default=None)
+    group_id: Optional[PydanticObjectId] = None
+    group: Optional[GroupSummary] = None
+    sender: Optional[UserSummary] = None
+    recipient: Optional[UserSummary] = None
+    sender_id: Optional[PydanticObjectId] = None
+    recipient_id: Optional[PydanticObjectId] = None
+    date: datetime = Field(default_factory=datetime.now)
+    type: RequestType = RequestType.JOIN_GROUP
+    status: RequestStatus = RequestStatus.PENDING
+
+    class Config:
+        json_encoders = {PydanticObjectId: str}
+
 class Token(BaseModel):
     access_token: str
     token_type: str = "Bearer"

@@ -162,12 +162,16 @@ const Group: React.FC = () => {
 
   useEffect(() => {
     const f = async () => {
-      if (!isAdmin) return;
-      if (groupDetails.id === "") return;
-      setShouldNotDisplayLoading(true);
-      const reqs = await getByGroup(groupDetails.id, token!);
-      setShouldNotDisplayLoading(false);
-      setRequests(reqs);
+      try{
+        if (!isAdmin) return;
+        if (groupDetails.id === "") return;
+        setShouldNotDisplayLoading(true);
+        const reqs = await getByGroup(groupDetails.id, token!);
+        setShouldNotDisplayLoading(false);
+        setRequests(reqs);
+      }catch(error: any){
+        setMessage("Could not get requests")
+      }
     };
     f();
   }, [isAdmin, groupDetails]);

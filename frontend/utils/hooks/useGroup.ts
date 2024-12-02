@@ -3,7 +3,6 @@ import { fetcher } from "../fetcher";
 import { useState } from "react";
 import {
   CreateGroupParams,
-  UserSummaryApiResponse,
   Group,
   GroupApiResponse,
   GroupSummary,
@@ -13,21 +12,6 @@ import {
 
 export const useGroup = () => {
   const [loading, setLoading] = useState(false);
-
-  const getMembers = async (id: string, token: string) => {
-    try {
-      return await fetcher<UserSummaryApiResponse[]>({
-        endpoint: `/api/v1/groups/${id}/users`,
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-    } catch (error) {
-      const err = error as ApiError;
-      throw Error("Could not get group");
-    }
-  };
 
   const get = async (id: string, token: string): Promise<Group> => {
     try {
@@ -39,8 +23,7 @@ export const useGroup = () => {
           Authorization: `Bearer ${token}`,
         },
       });
-      const members = await getMembers(id, token);
-      return new Group(res, members);
+      return new Group(res);
     } catch (error) {
       const err = error as ApiError;
       throw Error("Could not get group. Please try again.");

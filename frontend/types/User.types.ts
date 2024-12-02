@@ -15,6 +15,26 @@ export type UpdateAccountParams = {
   revolut_id?: string;
 };
 
+export type UserSummaryApiResponse = {
+  _id: string;
+  full_name: string;
+  username: string;
+};
+
+export class UserSummary {
+  id!: string;
+  fullName!: string;
+  username!: string;
+
+  constructor(us: UserSummaryApiResponse) {
+    return {
+      username: us.username,
+      fullName: us.full_name,
+      id: us._id,
+    };
+  }
+}
+
 export class User {
   id!: string;
   username!: string;
