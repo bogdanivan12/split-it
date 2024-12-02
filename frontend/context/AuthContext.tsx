@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { fetcher } from "@/utils/fetcher";
 import { User } from "@/types/User.types";
-import { useAccount } from "@/utils/hooks/useAccount";
+import { useUser } from "@/utils/hooks/useUser";
 import { router } from "expo-router";
 import { Alert } from "react-native";
 import { ApiError } from "@/types/ApiError.types";
@@ -29,7 +29,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState<User | null>(null);
 
-  const { get } = useAccount();
+  const { get } = useUser();
 
   const loadTokenFromLocalStorage = async () => {
     setLoading(true);

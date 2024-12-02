@@ -2,8 +2,9 @@ import { UpdateAccountParams, User, UserApiResponse } from "@/types/User.types";
 import { useState } from "react";
 import { fetcher } from "../fetcher";
 import { ApiError } from "@/types/ApiError.types";
+import { UserSummary, UserSummaryApiResponse } from "@/types/Group.types";
 
-export const useAccount = () => {
+export const useUser = () => {
   const [loading, setLoading] = useState(false);
 
   const update = async (data: UpdateAccountParams, token: string) => {
@@ -44,6 +45,50 @@ export const useAccount = () => {
     }
   };
 
+  const getByUsernames = async (usernames: string[], token: string) => {
+    try {
+      if (usernames.length === 0) return [];
+      setLoading(true);
+      if (usernames.length === 0) return [];
+      const res = await fetcher<UserSummaryApiResponse[]>({
+        endpoint: `/api/v1/users/get_by_usernames`,
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: usernames,
+      });
+      return res.map((u) => new UserSummary(u));
+    } catch (error) {
+      const err = error as ApiError;
+      throw Error("Could not get users");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getByIds = async (ids: string[], token: string) => {
+    try {
+      if (ids.length === 0) return [];
+      setLoading(true);
+      if (ids.length === 0) return [];
+      const res = await fetcher<UserSummaryApiResponse[]>({
+        endpoint: `/api/v1/users/get_by_ids`,
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: ids,
+      });
+      return res.map((u) => new UserSummary(u));
+    } catch (error) {
+      const err = error as ApiError;
+      throw Error("Could not get users");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const del = async (token: string) => {
     try {
       setLoading(true);
@@ -67,6 +112,8 @@ export const useAccount = () => {
     update,
     del,
     get,
+    getByIds,
+    getByUsernames,
     loading,
   };
 };

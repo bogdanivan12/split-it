@@ -22,7 +22,7 @@ import { CenteredLogoLoadingComponent } from "@/components/LogoLoadingComponent"
 import { useRequest } from "@/utils/hooks/useRequest";
 import { Requests } from "@/types/Request.types";
 import { Message } from "@/components/Message";
-import { ErrorIcon } from "@/components/Icons";
+import { ErrorIcon, SuccessIcon } from "@/components/Icons";
 import { useIsFocused } from "@react-navigation/native";
 
 const Group: React.FC = () => {
@@ -40,6 +40,7 @@ const Group: React.FC = () => {
   const { id } = useGlobalSearchParams();
   const [groupId] = useState(id as string);
   const [message, setMessage] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
@@ -63,6 +64,7 @@ const Group: React.FC = () => {
 
   useEffect(() => {
     setMessage(null);
+    setSuccessMessage(null);
   }, [isFocused]);
 
   const accept = async (req_id: string) => {
@@ -95,6 +97,7 @@ const Group: React.FC = () => {
   const inviteUsers = async (usernames: string[]) => {
     const groupId = groupDetails.id;
     await invite({ groupId, usernames }, token!);
+    setSuccessMessage("User invited");
   };
 
   const openModal = () => {
@@ -148,10 +151,6 @@ const Group: React.FC = () => {
         const gr = await get(groupId, token!);
         setIsAdmin(gr.owner.id === user!.id);
         setGroupDetails(gr);
-        setShouldNotDisplayLoading(true);
-        const reqs = await getByGroup(gr.id, token!);
-        setShouldNotDisplayLoading(false);
-        setRequests(reqs);
       } catch (err) {
         setMessage(
           "Failed to refresh group info. Please log out and try again."
@@ -160,6 +159,18 @@ const Group: React.FC = () => {
     };
     f();
   }, [user]);
+
+  useEffect(() => {
+    const f = async () => {
+      if (!isAdmin) return;
+      if (groupDetails.id === "") return;
+      setShouldNotDisplayLoading(true);
+      const reqs = await getByGroup(groupDetails.id, token!);
+      setShouldNotDisplayLoading(false);
+      setRequests(reqs);
+    };
+    f();
+  }, [isAdmin, groupDetails]);
 
   useEffect(() => {
     if (groupDetails)
@@ -259,10 +270,12 @@ const Group: React.FC = () => {
       </View>
       <Text style={styles.description}>{groupDetails.description}</Text>
 
-      {message && (
+      {message && <Message text={message} icon={ErrorIcon} />}
+      {successMessage && (
         <Message
-          text={message}
-          icon={ErrorIcon}
+          text={successMessage}
+          color={Colors.theme1.textAccept}
+          icon={SuccessIcon}
         />
       )}
 

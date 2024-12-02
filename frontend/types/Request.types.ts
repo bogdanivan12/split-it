@@ -1,4 +1,4 @@
-import { FullUsersApiResponse, UserInGroup } from "./Group.types";
+import { UserSummaryApiResponse, UserSummary } from "./Group.types";
 
 export type InviteParams = {
   usernames: string[];
@@ -18,8 +18,8 @@ export type MemberInGroup = {
 export type RequestApiResponse = {
   _id: string;
   group_id: string;
-  sender: FullUsersApiResponse;
-  recipient: FullUsersApiResponse;
+  sender_id: string;
+  recipient_id: string;
   date: string;
   type: RequestType;
   status: RequestStatus;
@@ -44,27 +44,21 @@ export type RequestsApiResponse = Record<
 export class Request {
   id!: string;
   groupId!: string;
-  sender!: UserInGroup;
-  recipient!: UserInGroup;
+  sender!: UserSummary;
+  recipient!: UserSummary;
   date!: string;
   type!: RequestType;
   status!: string;
 
-  constructor(res: RequestApiResponse) {
+  constructor(res: RequestApiResponse, users: UserSummary[]) {
+    const usersRecord: Record<string, UserSummary> = {};
+    users.forEach((u) => (usersRecord[u.id] = u));
     return {
       date: res.date,
       groupId: res.group_id,
       id: res._id,
-      recipient: {
-        fullName: res.recipient.full_name,
-        id: res.recipient._id,
-        username: res.recipient.username,
-      },
-      sender: {
-        fullName: res.sender.full_name,
-        id: res.sender._id,
-        username: res.sender.username,
-      },
+      recipient: usersRecord[res.recipient_id],
+      sender: usersRecord[res.sender_id],
       status: res.status,
       type: res.type,
     };

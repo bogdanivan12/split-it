@@ -11,6 +11,7 @@ import {
   Animated,
   Easing,
   Alert,
+  Platform,
 } from "react-native";
 import React, { useEffect, useState } from "react";
 import { User } from "@/types/User.types";
@@ -18,22 +19,13 @@ import { FontAwesome } from "@expo/vector-icons";
 import { Colors } from "@/constants/Theme";
 import { generalStyles } from "@/constants/SharedStyles";
 import { router } from "expo-router";
-import { useAccount } from "@/utils/hooks/useAccount";
+import { useUser } from "@/utils/hooks/useUser";
 import { useAuth } from "@/context/AuthContext";
 import { ApiError } from "@/types/ApiError.types";
 import {
   CenteredLogoLoadingComponent,
   LogoLoadingComponent,
 } from "@/components/LogoLoadingComponent";
-
-const hardcodedUser: User = {
-  id: "1",
-  fullName: "Vlad Rosu",
-  groupIds: ["Group1", "Group2"],
-  phoneNumber: "123456",
-  username: "vlandero",
-  email: "vlad@vlad.ro",
-};
 
 const ProfileField = ({
   isEditing,
@@ -70,7 +62,7 @@ export default function Profile() {
 
   const [scaleAnim] = useState(new Animated.Value(1));
 
-  const { del, update, loading } = useAccount();
+  const { del, update, loading } = useUser();
   const timeToFlip = 700;
 
   useEffect(() => {
@@ -194,6 +186,7 @@ export default function Profile() {
     >
       <KeyboardAvoidingView
         onStartShouldSetResponder={() => true}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.container}
       >
         <Animated.View

@@ -12,7 +12,7 @@ import {
   Alert,
 } from "react-native";
 import React, { useEffect, useState } from "react";
-import { Link, router } from "expo-router";
+import { Link } from "expo-router";
 import { FontAwesome, FontAwesome5, FontAwesome6 } from "@expo/vector-icons";
 import { Colors } from "@/constants/Theme";
 import { generalStyles, modalStyles } from "@/constants/SharedStyles";

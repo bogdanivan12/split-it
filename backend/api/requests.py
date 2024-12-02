@@ -23,35 +23,16 @@ async def get_requests(
     Retrieves all requests from the database.
     """
     try:
-        requests_cursor = db["requests"].find(
-            {"$or": [{"sender_id": user.id}, {"recipient_id": user.id}]}
-        )
-        requests = list(requests_cursor)
+        requests = db["requests"].find()
     except Exception as exception:
         raise HTTPException(status_code=status.HTTP_424_FAILED_DEPENDENCY,
                             detail=str(exception))
 
-    request_objects = [models.Request(**request) for request in requests]
-    
-    user_ids = {request.sender_id for request in request_objects}.union(
-        {request.recipient_id for request in request_objects}
-    )
-
-    try:
-        users_cursor = db["users"].find(
-            {"_id": {"$in": list(user_ids)}},
-            {"_id": 1, "username": 1, "full_name": 1}
-        )
-        users = {str(user["_id"]): models.UserSummary(**user) for user in users_cursor}
-    except Exception as exception:
-        raise HTTPException(status_code=status.HTTP_424_FAILED_DEPENDENCY, detail=str(exception))
-
-    for request_obj_full in request_objects:
-        request_obj_full.sender = users.get(str(request_obj_full.sender_id))
-        request_obj_full._id = request_obj_full.id
-        request_obj_full.sender_id = None
-        request_obj_full.recipient = users.get(str(request_obj_full.recipient_id))
-        request_obj_full.recipient_id = None
+    request_objects = [
+        models.Request(**request)
+        for request in requests
+        if user.id in [request["sender_id"], request["recipient_id"]]
+    ]
 
     response = {}
     for request_obj in request_objects:

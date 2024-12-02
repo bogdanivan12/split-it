@@ -96,6 +96,39 @@ async def get_group(
     
     return group
 
+@router.post("/get_groups", status_code=status.HTTP_200_OK,
+             response_model=List[models.GroupSummary])
+async def get_groups(
+        group_ids: List[PydanticObjectId],
+        user: Annotated[models.User, Depends(users.get_current_user)]
+):
+    """
+    # Get multiple groups by their ids
+    Retrieves multiple groups by their ids from the database.
+    ``` 
+    Args:
+        group_ids (List[str]): The ids of the groups to retrieve.
+        user (models.User): The authenticated user.
+    ```
+    """
+    try:
+        groups_cursor = db["groups"].find({"_id": {"$in": group_ids}})
+        groups = list(groups_cursor)
+    except Exception as exception:
+        raise HTTPException(status_code=status.HTTP_424_FAILED_DEPENDENCY,
+                            detail=str(exception))
+    
+    if not groups:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail="No groups found for the provided IDs")
+
+    group_objects = []
+    for group_dict in groups:
+        group = models.GroupSummary(**group_dict)
+        group_objects.append(group)
+
+    return group_objects
+
 
 @router.get("/", status_code=status.HTTP_200_OK,
             response_model=List[models.Group])

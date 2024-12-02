@@ -43,6 +43,10 @@ class Group(BaseModel):
     bill_ids: Optional[List[PydanticObjectId]] = Field(default_factory=list)
     join_code: Optional[str] = Field(min_length=4, max_length=20, default=None)
 
+class GroupSummary(BaseModel):
+    id: Optional[PydanticObjectId] = Field(alias="_id", default=None)
+    name: str = Field(min_length=5, max_length=30)
+
     class Config:
         json_encoders = {PydanticObjectId: str}
 
@@ -127,22 +131,7 @@ class Request(BaseModel):
     id: Optional[PydanticObjectId] = Field(alias="_id", default=None)
     group_id: PydanticObjectId
     sender_id: PydanticObjectId
-    sender: Optional[UserSummary] = None
-    recipient: Optional[UserSummary] = None
     recipient_id: PydanticObjectId
-    date: datetime = Field(default_factory=datetime.now)
-    type: RequestType = RequestType.JOIN_GROUP
-    status: RequestStatus = RequestStatus.PENDING
-
-    class Config:
-        json_encoders = {PydanticObjectId: str}
-
-
-class FullInfoRequest(BaseModel):
-    id: Optional[PydanticObjectId] = Field(alias="_id", default=None)
-    group_id: PydanticObjectId
-    sender: UserSummary
-    recipient: UserSummary
     date: datetime = Field(default_factory=datetime.now)
     type: RequestType = RequestType.JOIN_GROUP
     status: RequestStatus = RequestStatus.PENDING

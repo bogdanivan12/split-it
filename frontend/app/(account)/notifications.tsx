@@ -9,19 +9,17 @@ import {
 import { Colors } from "@/constants/Theme";
 import { GroupInvitation } from "@/types/Notification.types";
 import { useAuth } from "@/context/AuthContext";
+import { useRequest } from "@/utils/hooks/useRequest";
 
-const notificationsData: GroupInvitation[] = [
-  {
-    sender: "string",
-    requestId: "string",
-    groupId: "string",
-    groupName: "string",
-  },
-];
-
-const Invitation = ({ invitation }: { invitation: GroupInvitation }) => {
-  const accept = () => {};
-  const decline = () => {};
+const Invitation = ({
+  invitation,
+  accept,
+  decline,
+}: {
+  invitation: GroupInvitation;
+  accept: () => Promise<void>;
+  decline: () => Promise<void>;
+}) => {
   return (
     <View style={notificationStyles.container}>
       <View style={notificationStyles.textContainer}>
@@ -50,12 +48,41 @@ const Invitation = ({ invitation }: { invitation: GroupInvitation }) => {
 };
 
 export default function Notifications() {
-  const [invitations, setInvitations] = useState(notificationsData);
-  const { user } = useAuth();
+  const [invitations, setInvitations] = useState<GroupInvitation[]>([]);
+  const { user, token, refreshUser } = useAuth();
+  const { getInvites, acceptInvite, decline: declineInvite } = useRequest();
+
+  const [message, setMessage] = useState<string | null>(null);
+
+  const accept = async (requestId: string) => {
+    try {
+      await acceptInvite(requestId, token!);
+      await refreshUser();
+    } catch (error: any) {
+      setMessage(error.message);
+    }
+  };
+
+  const decline = async (requestId: string) => {
+    try {
+      await declineInvite(requestId, token!);
+      await refreshUser();
+    } catch (error: any) {
+      setMessage(error.message);
+    }
+  };
 
   useEffect(() => {
-    
-  }, [user])
+    const f = async () => {
+      try {
+        const invites = await getInvites(token!, user!.id);
+        setInvitations(invites);
+      } catch (err: any) {
+        setMessage(err.message);
+      }
+    };
+    f();
+  }, [user]);
 
   return (
     <View style={styles.container}>
@@ -64,7 +91,13 @@ export default function Notifications() {
         data={invitations}
         keyExtractor={(item) => item.requestId}
         contentContainerStyle={styles.notificationsList}
-        renderItem={({ item }) => <Invitation invitation={item} />}
+        renderItem={({ item }) => (
+          <Invitation
+            accept={() => accept(item.requestId)}
+            decline={() => decline(item.requestId)}
+            invitation={item}
+          />
+        )}
       />
     </View>
   );

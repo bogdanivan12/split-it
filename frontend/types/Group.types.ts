@@ -22,27 +22,52 @@ export type GroupApiResponse = {
   join_code: string;
 };
 
-export type FullUsersApiResponse = {
+export type GroupSummaryApiResponse = {
+  _id: string;
+  name: string;
+};
+
+export type UserSummaryApiResponse = {
   _id: string;
   full_name: string;
   username: string;
 };
 
-export type UserInGroup = {
-  id: string;
-  fullName: string;
-  username: string;
-};
+export class GroupSummary {
+  id!: string;
+  name!: string;
+
+  constructor(g: GroupSummaryApiResponse) {
+    return {
+      id: g._id,
+      name: g.name,
+    };
+  }
+}
+
+export class UserSummary {
+  id!: string;
+  fullName!: string;
+  username!: string;
+
+  constructor(us: UserSummaryApiResponse) {
+    return {
+      username: us.username,
+      fullName: us.full_name,
+      id: us._id,
+    };
+  }
+}
 
 export class Group {
   id!: string;
   name!: string;
   description!: string;
-  owner!: UserInGroup;
-  members!: UserInGroup[];
+  owner!: UserSummary;
+  members!: UserSummary[];
   joinCode!: string;
 
-  constructor(res: GroupApiResponse, members: FullUsersApiResponse[]) {
+  constructor(res: GroupApiResponse, members: UserSummaryApiResponse[]) {
     const owner = members.find((m) => m._id === res.owner_id)!;
     return {
       id: res._id,

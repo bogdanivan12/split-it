@@ -8,9 +8,15 @@ import {
   RequestsApiResponse,
 } from "@/types/Request.types";
 import { ApiError } from "@/types/ApiError.types";
+import { GroupInvitation } from "@/types/Notification.types";
+import { useGroup } from "./useGroup";
+import { useUser } from "./useUser";
 
 export const useRequest = () => {
   const [loading, setLoading] = useState(false);
+
+  const { getGroups } = useGroup();
+  const { getByIds } = useUser();
 
   const getAll = async (token: string) => {
     try {
@@ -30,14 +36,24 @@ export const useRequest = () => {
     try {
       setLoading(true);
       const allRequests = await getAll(token);
-      return allRequests
+      const sentRequests = allRequests.JOIN_GROUP.sent.filter(
+        (r) => r.group_id === groupId && r.status === "PENDING"
+      );
+      const receivedRequests = allRequests.JOIN_GROUP.received.filter(
+        (r) => r.group_id === groupId && r.status === "PENDING"
+      );
+      const ids = sentRequests
+        .map((r) => r.recipient_id)
+        .concat(receivedRequests.map((r) => r.sender_id));
+      const allUsers = await getByIds(ids, token);
+      return allRequests && allRequests.JOIN_GROUP
         ? {
             sent: allRequests.JOIN_GROUP.sent
               .filter((r) => r.group_id === groupId && r.status === "PENDING")
-              .map((r) => new Req(r)),
+              .map((r) => new Req(r, allUsers)),
             received: allRequests.JOIN_GROUP.received
               .filter((r) => r.group_id === groupId && r.status === "PENDING")
-              .map((r) => new Req(r)),
+              .map((r) => new Req(r, allUsers)),
           }
         : { sent: [], received: [] };
     } catch (error) {
@@ -48,16 +64,39 @@ export const useRequest = () => {
     }
   };
 
-  const getInvites = async (token: string, userId: string) => {
+  const getInvites = async (
+    token: string,
+    userId: string
+  ): Promise<GroupInvitation[]> => {
     try {
       setLoading(true);
       const allRequests = await getAll(token);
-      return allRequests
-        ? allRequests.JOIN_GROUP.sent
-            .filter((r) => r.recipient._id === userId)
-            .map((r) => new Req(r))
-        : [];
+      const inviteRequests =
+        allRequests && allRequests.INVITE_TO_GROUP
+          ? allRequests.INVITE_TO_GROUP.received.filter(
+              (r) => r.recipient_id === userId && r.status === "PENDING"
+            )
+          : [];
+      if (inviteRequests.length === 0) return [];
+      const groupNames: Record<string, string> = {};
+      const groupSummaries = await getGroups(
+        inviteRequests.map((r) => r.group_id),
+        token
+      );
+      groupSummaries.forEach((g) => (groupNames[g.id] = g.name));
+      const userSummaries = await getByIds(
+        inviteRequests.map((r) => r.sender_id),
+        token
+      );
+      const userNames: Record<string, string> = {};
+      userSummaries.forEach((u) => (userNames[u.id] = u.username));
+      return inviteRequests.map((i) => ({
+        groupName: groupNames[i.group_id],
+        requestId: i._id,
+        sender: userNames[i.sender_id],
+      }));
     } catch (error: any) {
+      console.log(error.message);
       throw Error("Could not get invites");
     } finally {
       setLoading(false);
@@ -74,7 +113,7 @@ export const useRequest = () => {
           Authorization: `Bearer ${token}`,
         },
         body: {
-          username: body.usernames,
+          usernames: body.usernames,
           group_id: body.groupId,
         },
       });
@@ -169,6 +208,7 @@ export const useRequest = () => {
     acceptInvite,
     acceptJoin,
     decline,
+    getInvites,
     checkIfUserExists,
   };
 };

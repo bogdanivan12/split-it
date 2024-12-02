@@ -59,8 +59,9 @@ export const InviteModal = ({
   };
   const inviteAction = async () => {
     try {
+      if (invitedUsers.length === 0) return;
       await invite(invitedUsers);
-      reset();
+      cancel();
     } catch (err: any) {
       const error = err as ApiError;
       setMessage(error.message);
@@ -109,47 +110,49 @@ export const InviteModal = ({
           }}
           keyboardShouldPersistTaps="handled"
         >
-          <View
-            onStartShouldSetResponder={() => true}
-            style={styles.inputContainer}
-          >
-            <TextInput
-              style={styles.input}
-              placeholder="Search..."
-              value={searchValue}
-              onChangeText={(i) => setSearchValue(i)}
-              placeholderTextColor={Colors.theme1.inputPlaceholder}
-            />
-            <TouchableOpacity onPress={add} style={styles.addButton}>
-              <Text style={styles.addText}>Add</Text>
-            </TouchableOpacity>
-          </View>
-          {invitedUsers.map((user) => (
-            <InvitedUser
-              remove={() => remove(user)}
-              username={user}
-              key={user}
-            />
-          ))}
+          <View onStartShouldSetResponder={() => true}>
+            <View style={styles.inputContainer}>
+              <TextInput
+                style={styles.input}
+                placeholder="Search..."
+                value={searchValue}
+                onChangeText={(i) => setSearchValue(i)}
+                placeholderTextColor={Colors.theme1.inputPlaceholder}
+              />
+              <TouchableOpacity onPress={add} style={styles.addButton}>
+                <Text style={styles.addText}>Add</Text>
+              </TouchableOpacity>
+            </View>
+            {invitedUsers.map((user) => (
+              <InvitedUser
+                remove={() => remove(user)}
+                username={user}
+                key={user}
+              />
+            ))}
 
-          {message && (
-            <Message
-              containerStyle={{ marginTop: 20 }}
-              text={message}
-              icon={ErrorIcon}
-            />
-          )}
+            {message && (
+              <Message
+                containerStyle={{ marginTop: 20 }}
+                text={message}
+                icon={ErrorIcon}
+              />
+            )}
 
-          <View style={modalStyles.modalActions}>
-            <TouchableOpacity style={modalStyles.modalButton} onPress={cancel}>
-              <Text style={modalStyles.modalButtonText}>Cancel</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={modalStyles.modalButton}
-              onPress={inviteAction}
-            >
-              <Text style={modalStyles.modalButtonText}>Invite</Text>
-            </TouchableOpacity>
+            <View style={modalStyles.modalActions}>
+              <TouchableOpacity
+                style={modalStyles.modalButton}
+                onPress={cancel}
+              >
+                <Text style={modalStyles.modalButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={modalStyles.modalButton}
+                onPress={inviteAction}
+              >
+                <Text style={modalStyles.modalButtonText}>Invite</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </ScrollView>
       </View>

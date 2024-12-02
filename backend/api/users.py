@@ -185,23 +185,54 @@ async def delete_user(user: models.User = Depends(get_current_user)):
                             detail="User not found")
 
 
-@router.get("/username/{username}", status_code=status.HTTP_200_OK,
-            response_model=models.UserSummary)
-def get_user_by_username(username: str):
+@router.post("/get_by_usernames", status_code=status.HTTP_200_OK,
+             response_model=list[models.UserSummary])
+def get_by_usernames(usernames: list[str]):
     """
-    # Get user by username
-    This endpoint returns the information about a user based on the username.
+    # Get users by usernames
+    This endpoint returns information about multiple users based on their usernames.
+    ```
+    Args:
+        usernames (List[str]): List of usernames to fetch.
+    ```
     """
     try:
-        user = db["users"].find_one({"username": username})
+        # Query to find users whose usernames are in the provided list
+        users_cursor = db["users"].find({"username": {"$in": usernames}})
+        users = list(users_cursor)
     except Exception as exception:
         raise HTTPException(status_code=status.HTTP_424_FAILED_DEPENDENCY,
                             detail=str(exception))
-    
-    if not user:
+    if not users:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                            detail="User not found")
-    return models.UserSummary(**user)
+                            detail="No users found for the provided usernames")
+    
+    return [models.UserSummary(**user) for user in users]
+
+
+@router.post("/get_by_ids", status_code=status.HTTP_200_OK,
+             response_model=list[models.UserSummary])
+def get_by_ids(ids: list[PydanticObjectId]):
+    """
+    # Get users by usernames
+    This endpoint returns information about multiple users based on their usernames.
+    ```
+    Args:
+        usernames (List[str]): List of usernames to fetch.
+    ```
+    """
+    try:
+        # Query to find users whose usernames are in the provided list
+        users_cursor = db["users"].find({"_id": {"$in": ids}})
+        users = list(users_cursor)
+    except Exception as exception:
+        raise HTTPException(status_code=status.HTTP_424_FAILED_DEPENDENCY,
+                            detail=str(exception))
+    if not users:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail="No users found for the provided ids")
+    
+    return [models.UserSummary(**user) for user in users]
 
 
 @router.get("/member_in_group/{username}/{group_id}", status_code=status.HTTP_200_OK,
@@ -235,6 +266,7 @@ def get_user_member_in_group(username: str, group_id: PydanticObjectId):
     try:
         request_exists = db["requests"].find_one({
             "group_id": group_id,
+            "status": "PENDING",
             "$or": [
                 {"sender_id": user_id},
                 {"recipient_id": user_id}
