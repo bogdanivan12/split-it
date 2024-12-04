@@ -56,11 +56,8 @@ async def get_requests(
 
     for request_obj_full in request_objects:
         request_obj_full.sender = users.get(str(request_obj_full.sender_id))
-        request_obj_full.sender_id = None
         request_obj_full.recipient = users.get(str(request_obj_full.recipient_id))
-        request_obj_full.recipient_id = None
         request_obj_full.group = groups.get(str(request_obj_full.group_id))
-        request_obj_full.group_id = None
 
     response = {}
     for request_obj in request_objects:

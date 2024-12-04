@@ -113,7 +113,7 @@ export const useRequest = () => {
     try {
       setLoading(true);
       return await fetcher<MemberInGroup>({
-        endpoint: `/api/v1/users/member_in_group/${body.username}/${body.groupId}`,
+        endpoint: `/api/v1/groups/${body.groupId}/member/${body.username}`,
         method: "GET",
         headers: {
           Authorization: `Bearer ${token}`,

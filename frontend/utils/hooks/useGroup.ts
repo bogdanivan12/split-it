@@ -5,8 +5,6 @@ import {
   CreateGroupParams,
   Group,
   GroupApiResponse,
-  GroupSummary,
-  GroupSummaryApiResponse,
   UpdateGroupParams,
 } from "@/types/Group.types";
 
@@ -31,31 +29,6 @@ export const useGroup = () => {
       setLoading(false);
     }
   };
-  const getGroups = async (
-    ids: string[],
-    token?: string
-  ): Promise<GroupSummary[]> => {
-    try {
-      if (!token) return [];
-      if (ids.length === 0) return [];
-      setLoading(true);
-      const res = await fetcher<GroupSummaryApiResponse[]>({
-        endpoint: `/api/v1/groups/get_groups`,
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        body: ids,
-      });
-      return res.map((g) => new GroupSummary(g));
-    } catch (error) {
-      const err = error as ApiError;
-      throw Error("Could not get groups. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const getAll = async (token?: string) => {
     try {
       if (!token) return [];
@@ -137,7 +110,6 @@ export const useGroup = () => {
 
   return {
     get,
-    getGroups,
     getAll,
     update,
     create,
