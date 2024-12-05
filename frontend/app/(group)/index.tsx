@@ -11,7 +11,11 @@ import {
 import React, { useEffect, useState } from "react";
 import { Colors } from "@/constants/Theme";
 import { Group as GroupType } from "@/types/Group.types";
-import { Entypo, FontAwesome } from "@expo/vector-icons";
+import {
+  Entypo,
+  FontAwesome,
+  MaterialCommunityIcons,
+} from "@expo/vector-icons";
 import CenteredModal from "@/components/modals/CenteredModal";
 import { generalStyles, modalStyles } from "@/constants/SharedStyles";
 import { InviteModal } from "@/components/modals/InviteModal";
@@ -67,10 +71,10 @@ const Group: React.FC = () => {
     setSuccessMessage(null);
   }, [isFocused]);
 
-  const accept = async (req_id: string) => {
+  const accept = async (id: string) => {
     try {
       setShouldNotDisplayLoading(true);
-      await acceptJoin(req_id, token!);
+      await acceptJoin(id, token!);
       setRequests({
         sent: [],
         received: [],
@@ -81,13 +85,20 @@ const Group: React.FC = () => {
       setMessage(err.message);
     }
   };
-  const reject = async (req_id: string) => {
+  const reject = async (id: string) => {
     try {
-      await decline(req_id, token!);
+      await decline(id, token!);
       await refreshUser();
     } catch (err: any) {
       setMessage(err.message);
     }
+  };
+
+  const removeUser = async (userId: string, username: string) => {
+    Alert.alert("Kick user", `Are you sure you want to kick ${username}?`, [
+      { text: "Cancel" },
+      { text: "Kick" },
+    ]);
   };
 
   const userExistsCheck = async (username: string) => {
@@ -106,6 +117,13 @@ const Group: React.FC = () => {
       description: groupDetails.description,
     });
     setEditModalOpen(true);
+  };
+
+  const deleteGroup = () => {
+    Alert.alert("Remove group", "Are you sure you want to delete the group?", [
+      { text: "Cancel" },
+      { text: "Remove group" },
+    ]);
   };
 
   const isLoading = () => groupLoading || requestLoading;
@@ -162,15 +180,15 @@ const Group: React.FC = () => {
 
   useEffect(() => {
     const f = async () => {
-      try{
+      try {
         if (!isAdmin) return;
         if (groupDetails.id === "") return;
         setShouldNotDisplayLoading(true);
         const reqs = await getByGroup(groupDetails.id, token!);
         setShouldNotDisplayLoading(false);
         setRequests(reqs);
-      }catch(error: any){
-        setMessage("Could not get requests")
+      } catch (error: any) {
+        setMessage("Could not get requests");
       }
     };
     f();
@@ -267,9 +285,14 @@ const Group: React.FC = () => {
       <View style={styles.headerWrapper}>
         <Text style={styles.header}>{groupDetails.name}</Text>
         {isAdmin && (
-          <TouchableOpacity onPress={openModal}>
-            <FontAwesome name="pencil" size={30} color={Colors.theme1.text} />
-          </TouchableOpacity>
+          <View style={styles.headerButtons}>
+            <TouchableOpacity onPress={openModal}>
+              <FontAwesome name="pencil" size={30} color={Colors.theme1.text} />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={deleteGroup}>
+              <FontAwesome name="remove" size={30} color={Colors.theme1.text} />
+            </TouchableOpacity>
+          </View>
         )}
       </View>
       <Text style={styles.description}>{groupDetails.description}</Text>
@@ -306,6 +329,21 @@ const Group: React.FC = () => {
           <View style={styles.membersContainer}>
             {groupDetails.members.map((member) => (
               <View key={member.id} style={styles.memberContainer}>
+                {isAdmin && (
+                  <View style={styles.deleteMemberButton}>
+                    <TouchableOpacity
+                      onPress={() => {
+                        removeUser(member.id, member.username);
+                      }}
+                    >
+                      <MaterialCommunityIcons
+                        size={24}
+                        name="sticker-remove-outline"
+                        color={Colors.theme1.text3}
+                      />
+                    </TouchableOpacity>
+                  </View>
+                )}
                 <Text style={styles.memberTextFullName}>{member.fullName}</Text>
                 <Text style={styles.memberText}>{member.username}</Text>
               </View>
@@ -374,6 +412,10 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: Colors.theme1.text,
   },
+  headerButtons: {
+    flexDirection: "row",
+    gap: 20,
+  },
   description: {
     fontSize: 17,
     fontFamily: "AlegreyaMedium",
@@ -409,6 +451,13 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     borderRadius: 8,
     marginVertical: 8,
+    position: "relative",
+  },
+  deleteMemberButton: {
+    position: "absolute",
+    right: 10,
+    top: 10,
+    color: Colors.theme1.text3,
   },
   memberText: {
     fontFamily: "AlegreyaItalic",
