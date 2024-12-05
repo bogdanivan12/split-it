@@ -25,11 +25,12 @@ async def get_requests(
     try:
         requests = db["requests"].find()
     except Exception as exception:
+        print(exception)
         raise HTTPException(status_code=status.HTTP_424_FAILED_DEPENDENCY,
                             detail=str(exception))
 
     request_objects = [
-        models.FullInfoRequest(**request)
+        api_response_classes.FullInfoRequest(**request)
         for request in requests
         if user.id in [request["sender_id"], request["recipient_id"]]
     ]
@@ -50,7 +51,7 @@ async def get_requests(
             {"_id": {"$in": list(group_ids)}},
             {"_id": 1, "name": 1}
         )
-        groups = {str(group["_id"]): models.GroupSummary(**group) for group in group_cursor}
+        groups = {str(group["_id"]): api_response_classes.GroupSummary(**group) for group in group_cursor}
     except Exception as exception:
         raise HTTPException(status_code=status.HTTP_424_FAILED_DEPENDENCY, detail=str(exception))
 

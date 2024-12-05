@@ -101,7 +101,7 @@ async def get_group(
     except Exception as exception:
         raise HTTPException(status_code=status.HTTP_424_FAILED_DEPENDENCY, detail=str(exception))
 
-    return models.FullInfoGroup(
+    return api_res.FullInfoGroup(
         bill_ids=group.bill_ids,
         name=group.name,
         description=group.description,
