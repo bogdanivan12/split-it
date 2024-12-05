@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from backend.common import models
 from backend.api.groups import db
-from backend.api import users, api_request_classes
+from backend.api import users, api_request_classes, api_response_classes
 from backend.api.api_response_classes import GetRequestsResponseForStatus
 
 
@@ -29,10 +29,35 @@ async def get_requests(
                             detail=str(exception))
 
     request_objects = [
-        models.Request(**request)
+        models.FullInfoRequest(**request)
         for request in requests
         if user.id in [request["sender_id"], request["recipient_id"]]
     ]
+
+    user_ids = {request.sender_id for request in request_objects}.union(
+        {request.recipient_id for request in request_objects}
+    )
+
+    group_ids = {request.group_id for request in request_objects}
+
+    try:
+        users_cursor = db["users"].find(
+            {"_id": {"$in": list(user_ids)}},
+            {"_id": 1, "username": 1, "full_name": 1}
+        )
+        users = {str(user["_id"]): api_response_classes.UserSummary(**user) for user in users_cursor}
+        group_cursor = db["groups"].find(
+            {"_id": {"$in": list(group_ids)}},
+            {"_id": 1, "name": 1}
+        )
+        groups = {str(group["_id"]): models.GroupSummary(**group) for group in group_cursor}
+    except Exception as exception:
+        raise HTTPException(status_code=status.HTTP_424_FAILED_DEPENDENCY, detail=str(exception))
+
+    for request_obj_full in request_objects:
+        request_obj_full.sender = users.get(str(request_obj_full.sender_id))
+        request_obj_full.recipient = users.get(str(request_obj_full.recipient_id))
+        request_obj_full.group = groups.get(str(request_obj_full.group_id))
 
     response = {}
     for request_obj in request_objects:
@@ -48,7 +73,7 @@ async def get_requests(
 
 
 @router.get("/{request_id}", status_code=status.HTTP_200_OK,
-            response_model=models.Request)
+            response_model=api_response_classes.FullInfoRequest)
 async def get_request(
         request_id: PydanticObjectId,
         user: Annotated[models.User, Depends(users.get_current_user)]
@@ -205,35 +230,41 @@ async def delete_request(
 
 
 @router.post("/invite", status_code=status.HTTP_201_CREATED)
-async def invite_user_to_group(
-        request: api_request_classes.InviteToGroupRequest,
+async def invite_users_to_group(
+        request: api_request_classes.InviteToGroupRequestBulk,
         user: Annotated[models.User, Depends(users.get_current_user)]
 ):
     """
-    # Send group invite request
-    Sends a group invite request to a user and saves it in the database.
+    # Send group invite requests
+    Sends group invite requests to multiple users and saves them in the database.
     """
-    recipient = db["users"].find_one({"username": request.username})
-    if not recipient:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                            detail="User not found")
-
-    if recipient["_id"] in db["groups"].find_one({"_id": request.group_id})["member_ids"]:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
-                            detail="User is already a member of the group")
-
-    invite_request = models.Request(
-        sender_id=user.id,
-        recipient_id=recipient["_id"],
-        group_id=request.group_id,
-        type=models.RequestType.INVITE_TO_GROUP
-    )
-
-    invite_request_dict = invite_request.model_dump(by_alias=True)
-    invite_request_dict.pop("_id", None)
+    recipients_cursor = db["users"].find({"username": {"$in": request.usernames}})
+    recipients = list(recipients_cursor)
+    recipient_map = {recipient["username"]: recipient for recipient in recipients}
 
     try:
-        db["requests"].insert_one(invite_request_dict)
+        group = db["groups"].find_one({"_id": request.group_id})
+    except Exception as exception:
+        raise HTTPException(status_code=status.HTTP_424_FAILED_DEPENDENCY, detail=str(exception))
+
+    if not group:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Group not found")
+
+    invite_requests = []
+    for username in request.usernames:
+        recipient = recipient_map[username]
+        invite_request = models.Request(
+            sender_id=user.id,
+            recipient_id=recipient["_id"],
+            group_id=request.group_id,
+            type=models.RequestType.INVITE_TO_GROUP
+        )
+        invite_request_dict = invite_request.model_dump(by_alias=True)
+        invite_request_dict.pop("_id", None)
+        invite_requests.append(invite_request_dict)
+
+    try:
+        db["requests"].insert_many(invite_requests)
     except Exception as exception:
         raise HTTPException(status_code=status.HTTP_424_FAILED_DEPENDENCY,
                             detail=str(exception))

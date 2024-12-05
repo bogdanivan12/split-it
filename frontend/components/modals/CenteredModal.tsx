@@ -5,6 +5,8 @@ import {
   StyleSheet,
   TouchableWithoutFeedback,
   Keyboard,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 
 const CenteredModal = ({
@@ -23,7 +25,10 @@ const CenteredModal = ({
       transparent={true}
       onRequestClose={onClose}
     >
-      <View style={styles.modal}>
+      <KeyboardAvoidingView
+        style={styles.modal}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+      >
         <TouchableWithoutFeedback onPress={onClose}>
           <View style={styles.modalOverlay} />
         </TouchableWithoutFeedback>
@@ -34,7 +39,7 @@ const CenteredModal = ({
         >
           {children}
         </TouchableWithoutFeedback>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 };

@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import React, { useEffect, useState } from "react";
 import { Colors } from "@/constants/Theme";
-import { Group as GroupType, UserInGroup } from "@/types/Group.types";
+import { Group as GroupType } from "@/types/Group.types";
 import { Entypo, FontAwesome } from "@expo/vector-icons";
 import CenteredModal from "@/components/modals/CenteredModal";
 import { generalStyles, modalStyles } from "@/constants/SharedStyles";
@@ -19,29 +19,87 @@ import { useAuth } from "@/context/AuthContext";
 import { useGroup } from "@/utils/hooks/useGroup";
 import { router, useGlobalSearchParams } from "expo-router";
 import { CenteredLogoLoadingComponent } from "@/components/LogoLoadingComponent";
+import { useRequest } from "@/utils/hooks/useRequest";
+import { Requests } from "@/types/Request.types";
+import { Message } from "@/components/Message";
+import { ErrorIcon, SuccessIcon } from "@/components/Icons";
+import { useIsFocused } from "@react-navigation/native";
 
 const Group: React.FC = () => {
   const { user, token, refreshUser } = useAuth();
-  const { get, loading, update } = useGroup();
+  const { get, loading: groupLoading, update } = useGroup();
+  const {
+    acceptJoin,
+    decline,
+    getByGroup,
+    checkIfUserExists,
+    invite,
+    loading: requestLoading,
+  } = useRequest();
+  const [shouldNotDisplayLoading, setShouldNotDisplayLoading] = useState(false);
   const { id } = useGlobalSearchParams();
   const [groupId] = useState(id as string);
+  const [message, setMessage] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
+  const isFocused = useIsFocused();
   const [groupDetails, setGroupDetails] = useState<GroupType>({
     description: "",
+    joinCode: "",
     id: "",
     members: [],
     name: "",
-    owner: {} as UserInGroup,
-    pendingMembers: [],
+    owner: { fullName: "", id: "", username: "" },
+  });
+  const [requests, setRequests] = useState<Requests>({
+    sent: [],
+    received: [],
   });
   const [editedDetails, setEditedDetails] = useState({
     name: "",
     description: "",
   });
-  const accept = (member: string) => {};
-  const reject = (member: string) => {};
+
+  useEffect(() => {
+    setMessage(null);
+    setSuccessMessage(null);
+  }, [isFocused]);
+
+  const accept = async (req_id: string) => {
+    try {
+      setShouldNotDisplayLoading(true);
+      await acceptJoin(req_id, token!);
+      setRequests({
+        sent: [],
+        received: [],
+      });
+      await refreshUser();
+      setShouldNotDisplayLoading(false);
+    } catch (err: any) {
+      setMessage(err.message);
+    }
+  };
+  const reject = async (req_id: string) => {
+    try {
+      await decline(req_id, token!);
+      await refreshUser();
+    } catch (err: any) {
+      setMessage(err.message);
+    }
+  };
+
+  const userExistsCheck = async (username: string) => {
+    const groupId = groupDetails.id;
+    return await checkIfUserExists({ groupId, username }, token!);
+  };
+  const inviteUsers = async (usernames: string[]) => {
+    const groupId = groupDetails.id;
+    await invite({ groupId, usernames }, token!);
+    setSuccessMessage("User invited");
+  };
+
   const openModal = () => {
     setEditedDetails({
       name: groupDetails.name,
@@ -49,6 +107,8 @@ const Group: React.FC = () => {
     });
     setEditModalOpen(true);
   };
+
+  const isLoading = () => groupLoading || requestLoading;
   const save = async () => {
     if (editedDetails.name.trim() === "") {
       Alert.alert("Required", "The name is required for a group", [
@@ -77,13 +137,8 @@ const Group: React.FC = () => {
       await refreshUser();
       setEditModalOpen(false);
     } catch (error: any) {
-      Alert.prompt("Error", error.message);
+      setMessage(error.message);
     }
-    setGroupDetails((prev) => ({
-      ...prev,
-      description: editedDetails.description,
-      name: editedDetails.name,
-    }));
   };
 
   useEffect(() => {
@@ -95,14 +150,31 @@ const Group: React.FC = () => {
       try {
         const gr = await get(groupId, token!);
         setIsAdmin(gr.owner.id === user!.id);
-        console.log(`setting groups ${JSON.stringify(gr)}`);
         setGroupDetails(gr);
       } catch (err) {
-        router.replace("/(account)");
+        setMessage(
+          "Failed to refresh group info. Please log out and try again."
+        );
       }
     };
     f();
   }, [user]);
+
+  useEffect(() => {
+    const f = async () => {
+      try{
+        if (!isAdmin) return;
+        if (groupDetails.id === "") return;
+        setShouldNotDisplayLoading(true);
+        const reqs = await getByGroup(groupDetails.id, token!);
+        setShouldNotDisplayLoading(false);
+        setRequests(reqs);
+      }catch(error: any){
+        setMessage("Could not get requests")
+      }
+    };
+    f();
+  }, [isAdmin, groupDetails]);
 
   useEffect(() => {
     if (groupDetails)
@@ -114,7 +186,13 @@ const Group: React.FC = () => {
   const discard = () => {
     setEditModalOpen(false);
   };
-  if (loading && !editModalOpen) return <CenteredLogoLoadingComponent />;
+  if (
+    isLoading() &&
+    !editModalOpen &&
+    !inviteModalOpen &&
+    !shouldNotDisplayLoading
+  )
+    return <CenteredLogoLoadingComponent />;
   return (
     <View style={styles.container}>
       {isAdmin && (
@@ -124,7 +202,7 @@ const Group: React.FC = () => {
         >
           <View style={modalStyles.modalContainer}>
             <Text style={modalStyles.modalTitle}>Edit group information</Text>
-            {editModalOpen && loading ? (
+            {editModalOpen && isLoading() ? (
               <CenteredLogoLoadingComponent />
             ) : (
               <ScrollView
@@ -182,6 +260,8 @@ const Group: React.FC = () => {
         <InviteModal
           open={inviteModalOpen}
           onClose={() => setInviteModalOpen(false)}
+          checkIfUserExists={userExistsCheck}
+          invite={inviteUsers}
         />
       )}
       <View style={styles.headerWrapper}>
@@ -194,11 +274,23 @@ const Group: React.FC = () => {
       </View>
       <Text style={styles.description}>{groupDetails.description}</Text>
 
+      {message && <Message text={message} icon={ErrorIcon} />}
+      {successMessage && (
+        <Message
+          text={successMessage}
+          color={Colors.theme1.textAccept}
+          icon={SuccessIcon}
+        />
+      )}
+
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ flexGrow: 1, paddingBottom: 200 }}
       >
         <View>
+          <Text style={styles.joinCodeHeader}>
+            Join code: {groupDetails.joinCode}
+          </Text>
           <Text style={styles.sectionHeader}>Group Master</Text>
           <View
             key={groupDetails.owner.id}
@@ -219,21 +311,21 @@ const Group: React.FC = () => {
               </View>
             ))}
             {isAdmin &&
-              groupDetails.pendingMembers.map((member) => (
-                <View key={member.id} style={styles.memberContainer}>
+              requests.received.map((req) => (
+                <View key={req.id} style={styles.memberContainer}>
                   <Text style={styles.memberTextFullName}>
-                    {member.fullName}
+                    {req.sender.fullName}
                   </Text>
-                  <Text style={styles.memberText}>{member.username}</Text>
+                  <Text style={styles.memberText}>{req.sender.username}</Text>
                   <View style={styles.groupRequestButtons}>
-                    <TouchableOpacity onPress={() => reject(member.username)}>
+                    <TouchableOpacity onPress={() => reject(req.id)}>
                       <Entypo
                         size={36}
                         name="cross"
                         color={Colors.theme1.textReject}
                       />
                     </TouchableOpacity>
-                    <TouchableOpacity onPress={() => accept(member.username)}>
+                    <TouchableOpacity onPress={() => accept(req.id)}>
                       <Entypo
                         size={36}
                         name="check"
@@ -290,6 +382,14 @@ const styles = StyleSheet.create({
   },
   sectionHeader: {
     fontSize: 24,
+    fontFamily: "AlegreyaMedium",
+    fontWeight: "bold",
+    color: Colors.theme1.text,
+    marginTop: 10,
+    marginBottom: 5,
+  },
+  joinCodeHeader: {
+    fontSize: 20,
     fontFamily: "AlegreyaMedium",
     fontWeight: "bold",
     color: Colors.theme1.text,

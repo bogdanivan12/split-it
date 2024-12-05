@@ -15,8 +15,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { signUpStyles as styles } from "@/constants/SharedStyles";
 import { CenteredLogoLoadingComponent } from "@/components/LogoLoadingComponent";
 import { useIsFocused } from "@react-navigation/native";
-import InputWithMessage from "@/components/InputWithMessage";
-import { Feather, MaterialIcons } from "@expo/vector-icons";
+import { InputWithMessage } from "@/components/InputWithMessage";
 import { Colors } from "@/constants/Theme";
 import { Message } from "@/components/Message";
 import { useLogin } from "@/utils/hooks/useLogin";
@@ -24,7 +23,6 @@ import {
   EMPTY_VALIDATE_LOGIN_RETURN,
   ValidateLoginReturn,
 } from "@/utils/validators/login";
-import { router } from "expo-router";
 import { useAuth } from "@/context/AuthContext";
 import { ErrorIcon, SuccessIcon } from "@/components/Icons";
 

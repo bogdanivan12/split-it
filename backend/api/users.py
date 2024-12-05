@@ -11,7 +11,7 @@ from fastapi import HTTPException, APIRouter, Form, Depends
 from backend.api import auth
 from backend.common import models
 from backend.common import config_info
-from backend.api import api_request_classes as api_req
+from backend.api import api_request_classes as api_req, api_response_classes as api_res
 
 router = APIRouter(prefix="/api/v1/users", tags=["users"])
 db = config_info.get_db()
@@ -182,23 +182,4 @@ async def delete_user(user: models.User = Depends(get_current_user)):
 
     if result.deleted_count == 0:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                            detail="User not found")
-
-
-@router.get("/username/{username}", status_code=status.HTTP_200_OK,
-            response_model=models.UserSummary)
-def get_user_by_username(username: str):
-    """
-    # Get user by username
-    This endpoint returns the information about a user based on the username.
-    """
-    try:
-        user = db["users"].find_one({"username": username})
-    except Exception as exception:
-        raise HTTPException(status_code=status.HTTP_424_FAILED_DEPENDENCY,
-                            detail=str(exception))
-    
-    if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                            detail="User not found")
-    return models.UserSummary(**user)
+                            detail="User not found")  

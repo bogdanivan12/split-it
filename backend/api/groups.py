@@ -10,7 +10,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from backend.api import users
 from backend.common import models
 from backend.common import config_info
-from backend.api import api_request_classes as api_req
+from backend.api import api_request_classes as api_req, api_response_classes as api_res
 
 router = APIRouter(prefix="/api/v1/groups", tags=["groups"])
 db = config_info.get_db()
@@ -65,7 +65,7 @@ async def create_group(
 
 
 @router.get("/{group_id}", status_code=status.HTTP_200_OK,
-            response_model=models.Group)
+            response_model=api_res.FullInfoGroup)
 async def get_group(
         group_id: PydanticObjectId,
         user: Annotated[models.User, Depends(users.get_current_user)]
@@ -84,7 +84,6 @@ async def get_group(
     except Exception as exception:
         raise HTTPException(status_code=status.HTTP_424_FAILED_DEPENDENCY,
                             detail=str(exception))
-
     if not group_dict:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail="Group not found")
@@ -94,9 +93,23 @@ async def get_group(
     if user.id not in group.member_ids:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
                             detail="User is not a member of the group")
+    
+    try:
+        users_cursor = db["users"].find({"_id": {"$in": group.member_ids}}, {"_id": 1, "username": 1, "full_name": 1})
+        users = list(users_cursor)
+        user_objects = [api_res.UserSummary(**user) for user in users]
+    except Exception as exception:
+        raise HTTPException(status_code=status.HTTP_424_FAILED_DEPENDENCY, detail=str(exception))
 
-    return group
-
+    return models.FullInfoGroup(
+        bill_ids=group.bill_ids,
+        name=group.name,
+        description=group.description,
+        join_code=group.join_code,
+        members=user_objects,
+        owner_id=group.owner_id,
+        _id=group_id
+    )
 
 @router.get("/", status_code=status.HTTP_200_OK,
             response_model=List[models.Group])
@@ -185,6 +198,25 @@ async def join_group(
                             detail="You are already a member of the group")
 
     group = models.Group(**group_dict)
+    existing_request = db["requests"].find_one({
+        "group_id": group_dict["_id"],
+        "sender_id": user.id,
+        "type": models.RequestType.JOIN_GROUP,
+        "status": models.RequestStatus.PENDING
+    })
+    if existing_request:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT,
+                            detail="You have already requested to join this group")
+    
+    existing_request = db["requests"].find_one({
+        "group_id": group_dict["_id"],
+        "recipiend_id": user.id,
+        "type": models.RequestType.JOIN_GROUP,
+        "status": models.RequestStatus.PENDING
+    })
+    if existing_request:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT,
+                            detail="You have already been invited to this group")
     join_request = models.Request(
         group_id=group.id,
         sender_id=user.id,
@@ -201,7 +233,7 @@ async def join_group(
                             detail=str(e))
 
 
-@router.get("/{group_id}/users", status_code=status.HTTP_200_OK, response_model=List[models.UserSummary])
+@router.get("/{group_id}/users", status_code=status.HTTP_200_OK, response_model=List[api_res.UserSummary])
 async def get_users_by_group_id(
     group_id: PydanticObjectId,
     user: Annotated[models.User, Depends(users.get_current_user)]
@@ -225,5 +257,51 @@ async def get_users_by_group_id(
     except Exception as exception:
         raise HTTPException(status_code=status.HTTP_424_FAILED_DEPENDENCY, detail=str(exception))
 
-    user_objects = [models.UserSummary(**user) for user in users]
+    user_objects = [api_res.UserSummary(**user) for user in users]
     return user_objects
+
+
+@router.get("/{group_id}/member/{username}", status_code=status.HTTP_200_OK,
+            response_model=api_res.IsUserInGroup)
+def get_user_member_in_group(username: str, group_id: PydanticObjectId):
+    """
+    # Check if user is in group or has a pending request
+    This endpoint returns whether a user is a member of the group or has a related request, using username.
+    """
+    try:
+        group = db["groups"].find_one({"_id": group_id})
+    except Exception as exception:
+        raise HTTPException(status_code=status.HTTP_424_FAILED_DEPENDENCY, detail=str(exception))
+    if not group:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Group not found")
+    
+    try:
+        user = db["users"].find_one({"username": username})
+    except Exception as exception:
+        raise HTTPException(status_code=status.HTTP_424_FAILED_DEPENDENCY, detail=str(exception))
+    
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    
+    user_id = user["_id"]
+
+    
+    if user_id in group["member_ids"]:
+        return {"in_group": True, "has_request": False}
+    
+    try:
+        request_exists = db["requests"].find_one({
+            "group_id": group_id,
+            "status": "PENDING",
+            "$or": [
+                {"sender_id": user_id},
+                {"recipient_id": user_id}
+            ]
+        })
+    except Exception as exception:
+        raise HTTPException(status_code=status.HTTP_424_FAILED_DEPENDENCY, detail=str(exception))
+    if request_exists:
+        return {"in_group": False, "has_request": True}
+
+    return {"in_group": False, "has_request": False}
+    

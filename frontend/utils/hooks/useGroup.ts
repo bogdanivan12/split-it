@@ -1,77 +1,17 @@
 import { ApiError } from "@/types/ApiError.types";
 import { fetcher } from "../fetcher";
 import { useState } from "react";
-import { Group } from "@/types/Group.types";
-
-type CreateGroupParams = {
-  name: string;
-  description: string;
-};
-
-type UpdateGroupParams = {
-  _id: string;
-  name: string;
-  description: string;
-  owner_id: string;
-  member_ids: string[];
-  bill_ids: string[];
-};
-
-type GroupApiResponse = {
-  _id: string;
-  name: string;
-  description: string;
-  owner_id: string;
-  member_ids: string[];
-  bill_ids: string[];
-  join_code: string;
-};
-
-type GroupUsersApiResponse = {
-  _id: string;
-  full_name: string;
-  username: string;
-};
-
-const groupMapper = (
-  res: GroupApiResponse,
-  usersRes: GroupUsersApiResponse[]
-): Group => {
-  const owner = usersRes.find((m) => m._id === res.owner_id)!;
-  return {
-    id: res._id,
-    description: res.description,
-    members: usersRes
-      .filter((m) => m._id !== res.owner_id)
-      .map((m) => ({
-        fullName: m.full_name,
-        id: m._id,
-        username: m.username,
-      })),
-    name: res.name,
-    owner: {
-      fullName: owner.full_name,
-      id: res.owner_id,
-      username: owner.username,
-    },
-    pendingMembers: [],
-  };
-};
+import {
+  CreateGroupParams,
+  Group,
+  GroupApiResponse,
+  UpdateGroupParams,
+} from "@/types/Group.types";
 
 export const useGroup = () => {
   const [loading, setLoading] = useState(false);
 
-  const getUsersInGroup = async (id: string, token: string) => {
-    return await fetcher<GroupUsersApiResponse[]>({
-      endpoint: `/api/v1/groups/${id}/users`,
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-  };
-
-  const get = async (id: string, token: string) => {
+  const get = async (id: string, token: string): Promise<Group> => {
     try {
       setLoading(true);
       const res = await fetcher<GroupApiResponse>({
@@ -81,20 +21,17 @@ export const useGroup = () => {
           Authorization: `Bearer ${token}`,
         },
       });
-
-      const usersRes = await getUsersInGroup(id, token);
-
-      return groupMapper(res, usersRes);
+      return new Group(res);
     } catch (error) {
       const err = error as ApiError;
-      throw Error("Could not get group");
+      throw Error("Could not get group. Please try again.");
     } finally {
       setLoading(false);
     }
   };
-
-  const getAll = async (token: string) => {
+  const getAll = async (token?: string) => {
     try {
+      if (!token) return [];
       setLoading(true);
       const res = await fetcher<GroupApiResponse[]>({
         endpoint: `/api/v1/groups/`,
@@ -115,7 +52,7 @@ export const useGroup = () => {
   const update = async (data: UpdateGroupParams, token: string) => {
     try {
       setLoading(true);
-      const res = await fetcher<GroupApiResponse>({
+      await fetcher<GroupApiResponse>({
         endpoint: `/api/v1/groups/${data._id}`,
         method: "PUT",
         headers: {
@@ -123,8 +60,6 @@ export const useGroup = () => {
         },
         body: data,
       });
-      const usersRes = await getUsersInGroup(data._id, token);
-      return groupMapper(res, usersRes);
     } catch (error) {
       const err = error as ApiError;
       throw Error("Could not update group");
@@ -153,11 +88,32 @@ export const useGroup = () => {
     }
   };
 
+  const join = async (groupCode: string, token: string) => {
+    try {
+      setLoading(true);
+      await fetcher({
+        endpoint: `/api/v1/groups/join/${groupCode}`,
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+    } catch (error) {
+      const err = error as ApiError;
+      if (err.code === 404) throw Error("Invalid join code");
+      if (err.code === 409) throw Error(err.body.detail);
+      throw Error("Could not join group");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
     get,
     getAll,
     update,
     create,
+    join,
     loading,
   };
 };

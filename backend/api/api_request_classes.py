@@ -28,3 +28,7 @@ class UpdateGroupRequest(BaseModel):
 class InviteToGroupRequest(BaseModel):
     username: str = Field(min_length=5, max_length=20)
     group_id: PydanticObjectId
+
+class InviteToGroupRequestBulk(BaseModel):
+    group_id: PydanticObjectId
+    usernames: List[str]

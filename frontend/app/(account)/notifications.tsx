@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -7,117 +7,96 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { Colors } from "@/constants/Theme";
+import { GroupInvitation } from "@/types/Notification.types";
+import { useAuth } from "@/context/AuthContext";
+import { useRequest } from "@/utils/hooks/useRequest";
 
-type NotificationType = "groupInvite" | "joinRequest" | "informative";
-
-interface NotificationProps {
-  id: string;
-  type: NotificationType;
-  title: string;
-  content: string;
-  seen: boolean;
-}
-
-const notificationsData: NotificationProps[] = [
-  {
-    id: "1",
-    type: "groupInvite",
-    title: "Group Invite",
-    content: "You have been invited to join 'React Devs'",
-    seen: false,
-  },
-  {
-    id: "2",
-    type: "joinRequest",
-    title: "Join Request",
-    content: "John Doe requested to join 'React Devs'",
-    seen: false,
-  },
-  {
-    id: "3",
-    type: "informative",
-    title: "Invite Response",
-    content: "Jane Doe accepted your invite to 'React Devs'",
-    seen: false,
-  },
-];
-
-const Notification = ({
-  notification,
-  onAction,
+const Invitation = ({
+  invitation,
+  accept,
+  decline,
 }: {
-  notification: NotificationProps;
-  onAction: (id: string, action: string) => void;
+  invitation: GroupInvitation;
+  accept: () => Promise<void>;
+  decline: () => Promise<void>;
 }) => {
   return (
     <View style={notificationStyles.container}>
-      {!notification.seen && <View style={notificationStyles.unreadBubble} />}
       <View style={notificationStyles.textContainer}>
-        <Text style={notificationStyles.title}>{notification.title}</Text>
-        <Text style={notificationStyles.content}>{notification.content}</Text>
-        {notification.type === "groupInvite" && (
-          <View style={notificationStyles.actionButtons}>
-            <TouchableOpacity
-              style={notificationStyles.acceptButton}
-              onPress={() => onAction(notification.id, "accept")}
-            >
-              <Text style={notificationStyles.actionText}>Accept</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={notificationStyles.rejectButton}
-              onPress={() => onAction(notification.id, "reject")}
-            >
-              <Text style={notificationStyles.actionText}>Reject</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-        {notification.type === "joinRequest" && (
-          <View style={notificationStyles.actionButtons}>
-            <TouchableOpacity
-              style={notificationStyles.acceptButton}
-              onPress={() => onAction(notification.id, "accept")}
-            >
-              <Text style={notificationStyles.actionText}>Accept</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={notificationStyles.rejectButton}
-              onPress={() => onAction(notification.id, "reject")}
-            >
-              <Text style={notificationStyles.actionText}>Reject</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={notificationStyles.goToGroupButton}
-              onPress={() => onAction(notification.id, "goToGroup")}
-            >
-              <Text style={notificationStyles.actionText}>Go to Group</Text>
-            </TouchableOpacity>
-          </View>
-        )}
+        <Text style={notificationStyles.title}>Group invite</Text>
+        <Text style={notificationStyles.content}>
+          {invitation.sender} has invited you to join {invitation.groupName}
+        </Text>
+
+        <View style={notificationStyles.actionButtons}>
+          <TouchableOpacity
+            style={notificationStyles.acceptButton}
+            onPress={accept}
+          >
+            <Text style={notificationStyles.actionText}>Accept</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={notificationStyles.rejectButton}
+            onPress={decline}
+          >
+            <Text style={notificationStyles.actionText}>Reject</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </View>
   );
 };
 
 export default function Notifications() {
-  const [notifications, setNotifications] = useState(notificationsData);
+  const [invitations, setInvitations] = useState<GroupInvitation[]>([]);
+  const { user, token, refreshUser } = useAuth();
+  const { getInvites, acceptInvite, decline: declineInvite } = useRequest();
 
-  const handleAction = (id: string, action: string) => {
-    if (action === "accept" || action === "reject") {
-      setNotifications((prev) => prev.filter((notif) => notif.id !== id));
-    } else if (action === "goToGroup") {
-      console.log(`Go to group action for notification ID: ${id}`);
+  const [message, setMessage] = useState<string | null>(null);
+
+  const accept = async (requestId: string) => {
+    try {
+      await acceptInvite(requestId, token!);
+      await refreshUser();
+    } catch (error: any) {
+      setMessage(error.message);
     }
   };
+
+  const decline = async (requestId: string) => {
+    try {
+      await declineInvite(requestId, token!);
+      await refreshUser();
+    } catch (error: any) {
+      setMessage(error.message);
+    }
+  };
+
+  useEffect(() => {
+    const f = async () => {
+      try {
+        const invites = await getInvites(user!.id, token!);
+        setInvitations(invites);
+      } catch (err: any) {
+        setMessage(err.message);
+      }
+    };
+    f();
+  }, [user]);
 
   return (
     <View style={styles.container}>
       <Text style={styles.header}>Notifications</Text>
       <FlatList
-        data={notifications}
-        keyExtractor={(item) => item.id}
+        data={invitations}
+        keyExtractor={(item) => item.requestId}
         contentContainerStyle={styles.notificationsList}
         renderItem={({ item }) => (
-          <Notification notification={item} onAction={handleAction} />
+          <Invitation
+            accept={() => accept(item.requestId)}
+            decline={() => decline(item.requestId)}
+            invitation={item}
+          />
         )}
       />
     </View>

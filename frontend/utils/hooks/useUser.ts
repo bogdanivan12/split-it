@@ -1,22 +1,16 @@
-import { User, UserApiResponse } from "@/types/User.types";
+import { UpdateAccountParams, User, UserApiResponse, UserSummary, UserSummaryApiResponse } from "@/types/User.types";
 import { useState } from "react";
 import { fetcher } from "../fetcher";
 import { ApiError } from "@/types/ApiError.types";
 
-type UpdateAccountParams = {
-  email: string;
-  full_name?: string;
-  phone_number?: string;
-  revolut_id?: string;
-};
-
-export const useAccount = () => {
+export const useUser = () => {
   const [loading, setLoading] = useState(false);
 
-  const update = async (data: UpdateAccountParams, token: string) => {
+  const update = async (data: Partial<UpdateAccountParams>, token: string) => {
     try {
+      if (Object.keys(data).length === 0) return;
       setLoading(true);
-      const res = await fetcher<UserApiResponse>({
+      await fetcher<UserApiResponse>({
         endpoint: `/api/v1/users/me`,
         method: "PUT",
         headers: {
@@ -24,7 +18,6 @@ export const useAccount = () => {
         },
         body: data,
       });
-      return res;
     } catch (error) {
       const err = error as ApiError;
       throw Error("Could not update account");
@@ -43,7 +36,7 @@ export const useAccount = () => {
           Authorization: `Bearer ${token}`,
         },
       });
-      return res;
+      return new User(res);
     } catch (error) {
       const err = error as ApiError;
       throw Error("Could not get account");

@@ -23,13 +23,6 @@ class User(BaseModel):
 class UserInDB(User):
     hashed_password: str
 
-
-class UserSummary(BaseModel):
-    id: PydanticObjectId = Field(alias="_id")
-    username: str
-    full_name: Optional[str]
-
-
 class Group(BaseModel):
     id: Optional[PydanticObjectId] = Field(alias="_id", default=None)
     name: str = Field(min_length=5, max_length=30)
@@ -39,14 +32,9 @@ class Group(BaseModel):
     bill_ids: Optional[List[PydanticObjectId]] = Field(default_factory=list)
     join_code: Optional[str] = Field(min_length=4, max_length=20, default=None)
 
-    class Config:
-        json_encoders = {PydanticObjectId: str}
-
-
 class InitialPayer(BaseModel):
     user_id: str
     amount: float
-
 
 class Product(BaseModel):
     name: str
@@ -118,6 +106,7 @@ class Request(BaseModel):
 
     class Config:
         json_encoders = {PydanticObjectId: str}
+
 
 
 class Token(BaseModel):
