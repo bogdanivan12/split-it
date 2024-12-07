@@ -6,18 +6,40 @@ import {
   TouchableOpacity,
   ScrollView,
 } from "react-native";
-import React from "react";
-import { Link } from "expo-router";
+import React, { useEffect, useState } from "react";
+import { Link, useGlobalSearchParams } from "expo-router";
 import { Colors } from "@/constants/Theme";
 import { Bill } from "@/types/Bill.types";
-
-const billsData: Bill[] = [
-  { id: "1", name: "Electricity", amount: "$120", dateCreated: "2023-12-01" },
-  { id: "2", name: "Water", amount: "$45", dateCreated: "2023-12-05" },
-  { id: "4", name: "Internet", amount: "$80", dateCreated: "2023-12-10" },
-];
+import { useAuth } from "@/context/AuthContext";
+import { useBill } from "@/utils/hooks/useBill";
+import { useIsFocused } from "@react-navigation/native";
+import { Feather, FontAwesome } from "@expo/vector-icons";
 
 const Bills: React.FC = () => {
+  const { token, user } = useAuth();
+  const { getAll } = useBill();
+
+  const isFocused = useIsFocused();
+  const { id } = useGlobalSearchParams();
+  const [groupId] = useState(id as string);
+
+  const [bills, setBills] = useState<Bill[]>([]);
+
+  const editBill = () => {};
+  const removeBill = () => {};
+
+  const isAdmin = (ownerId: string) => {
+    return true;
+    return ownerId === user?.id;
+  };
+
+  useEffect(() => {
+    const f = async () => {
+      const bills = await getAll(groupId, token!);
+      setBills(bills);
+    };
+    f();
+  }, [user]);
   return (
     <View style={styles.container}>
       <Text style={styles.header}>What has been paid?</Text>
@@ -29,25 +51,57 @@ const Bills: React.FC = () => {
           paddingBottom: 200,
         }}
       >
-        {billsData.map((item) => {
+        {bills.map((item) => {
           return (
             <Link
               key={item.id}
               asChild
               href={{
-                pathname: `/(bills)`,
-                params: { id: item.id },
+                pathname: `/(bill)`,
+                params: { billId: item.id },
               }}
             >
               <TouchableOpacity style={styles.billContainer}>
-                <Text style={styles.billName}>{item.name}</Text>
-                <Text style={styles.billDetails}>
-                  {item.amount} - Created on: {item.dateCreated}
-                </Text>
+                <View style={styles.billDetailsContainer}>
+                  <Text style={styles.billName}>{item.name}</Text>
+                  <Text style={styles.billDetails}>
+                    {item.amount} - Created by: {item.owner.username}
+                  </Text>
+                  <Text style={styles.billDetails}>on: {item.dateCreated}</Text>
+                </View>
+                {isAdmin(item.owner.id) && (
+                  <View style={styles.billDetailsButtons}>
+                    <TouchableOpacity onPress={editBill}>
+                      <FontAwesome
+                        name="pencil"
+                        size={22}
+                        color={Colors.theme1.text1}
+                      />
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={removeBill}>
+                      <FontAwesome
+                        name="remove"
+                        size={22}
+                        color={Colors.theme1.text1}
+                      />
+                    </TouchableOpacity>
+                  </View>
+                )}
               </TouchableOpacity>
             </Link>
           );
         })}
+        <Link
+          asChild
+          href={{
+            pathname: `/(bill)`,
+          }}
+        >
+          <TouchableOpacity style={styles.addBillContainer}>
+            <Feather name="plus-circle" size={20} />
+            <Text style={styles.billName}>Add bill</Text>
+          </TouchableOpacity>
+        </Link>
       </ScrollView>
     </View>
   );
@@ -77,7 +131,16 @@ const styles = StyleSheet.create({
   billsContainer: {
     flexDirection: "column",
   },
+  billDetailsContainer: {
+    maxWidth: "75%",
+  },
+  billDetailsButtons: {
+    gap: 5,
+    justifyContent: "center",
+  },
   billContainer: {
+    justifyContent: "space-between",
+    flexDirection: "row",
     backgroundColor: Colors.theme1.button5,
     padding: 15,
     borderRadius: 8,
@@ -87,6 +150,21 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     width: "95%",
     alignSelf: "center",
+  },
+  addBillContainer: {
+    backgroundColor: Colors.theme1.button5,
+    padding: 15,
+    borderRadius: 8,
+    marginBottom: 10,
+    shadowOffset: { width: 1, height: 1 },
+    shadowOpacity: 0.4,
+    shadowRadius: 2,
+    width: "50%",
+    alignSelf: "center",
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: 10,
+    alignItems: "center",
   },
   billName: {
     fontSize: 18,

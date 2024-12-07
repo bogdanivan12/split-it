@@ -36,7 +36,6 @@ export const useRequest = () => {
       setLoading(true);
       if (!token) return { sent: [], received: [] };
       const allRequests = await getAll(token);
-      console.log(JSON.stringify(allRequests))
       return allRequests && allRequests.JOIN_GROUP
         ? {
             sent: allRequests.JOIN_GROUP.sent
