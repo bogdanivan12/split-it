@@ -12,6 +12,6 @@ export type Bill = {
 export type Product = {
   name: string;
   quantity: number;
-  pricePerUnit: number;
+  totalPrice: number;
   assignedPayers: { user: UserSummary; assigned: boolean }[];
 };

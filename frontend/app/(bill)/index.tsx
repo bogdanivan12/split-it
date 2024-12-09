@@ -5,12 +5,17 @@ import {
   TouchableOpacity,
   Text,
 } from "react-native";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Colors } from "@/constants/Theme";
-import { useGlobalSearchParams } from "expo-router";
+import { router, useGlobalSearchParams } from "expo-router";
 import { Product } from "@/types/Bill.types";
 import { UserSummary } from "@/types/User.types";
-import { Ionicons } from "@expo/vector-icons";
+import { Entypo, Ionicons } from "@expo/vector-icons";
+import { useGroup } from "@/utils/hooks/useGroup";
+import { useAuth } from "@/context/AuthContext";
+import { Group } from "@/types/Group.types";
+import CenteredModal from "@/components/modals/CenteredModal";
+import { CenteredLogoLoadingComponent } from "@/components/LogoLoadingComponent";
 
 // TODO: ce se intampla daca un user iese din grup in timp ce creezi un bill?
 
@@ -28,16 +33,77 @@ import { Ionicons } from "@expo/vector-icons";
 // cand schimbi totalul, se scade/adauga diferenta la RP
 // apar erori daca balantele sunt pe minus
 
+const AssignedPayersModal = ({
+  open,
+  onClose,
+}: {
+  open: boolean;
+  onClose: () => void;
+}) => {
+  return (
+    <CenteredModal onClose={onClose} visible={open}>
+      <View></View>
+    </CenteredModal>
+  );
+};
+
+const InitialPayersModal = ({
+  open,
+  onClose,
+}: {
+  open: boolean;
+  onClose: () => void;
+}) => {
+  return (
+    <CenteredModal onClose={onClose} visible={open}>
+      <View></View>
+    </CenteredModal>
+  );
+};
+
 export default function Layout() {
-  const { billId } = useGlobalSearchParams();
+  const { billId, groupId } = useGlobalSearchParams();
   const [title, setTitle] = useState("");
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<Product[]>([
+    {
+      assignedPayers: [],
+      name: "Something",
+      quantity: 3,
+      totalPrice: 30,
+    },
+  ]);
   const [initialPayers, setInitialPayers] = useState<UserSummary[]>([]);
   const [totalPrice, setTotalPrice] = useState<number | null>(null);
+  const [assignedPayersModalOpen, setAssignedPayersModalOpen] = useState(false);
+  const [initialPayersModalOpen, setInitialPayersModalOpen] = useState(false);
+  const [groupDetails, setGroupDetails] = useState<Group | null>(null);
+
+  const { get: getGroup, loading: groupLoading } = useGroup();
+  const { token } = useAuth();
 
   const addProduct = () => {};
 
+  const isLoading = () => {
+    return groupLoading;
+  };
+
+  useEffect(() => {
+    if (!groupId) {
+      return;
+    }
+    const f = async () => {
+      try {
+        const gr = await getGroup(groupId as string, token!);
+        setGroupDetails(gr);
+      } catch (err) {
+        router.back();
+      }
+    };
+    f();
+  }, []);
+
   if (billId) return null;
+  if (isLoading()) return <CenteredLogoLoadingComponent />;
   return (
     <View style={styles.container}>
       <TextInput
@@ -48,48 +114,76 @@ export default function Layout() {
         value={title}
         onChangeText={(text) => setTitle(text)}
       />
-      {products.map((p) => (
-        // small bug here, there could be 2 with the same name
-        // the name should be unique, or have some id that is unique
-        <View key={`${p.name}`}>
-          <View>
-            <Text>{p.name}</Text>
-          </View>
-          <View>
-            <View>
-              <TextInput
-                value={p.quantity.toString()}
-                onChangeText={(text) =>
-                  setProducts((prev) => ({
-                    ...prev.filter((product) => product.name !== text),
-                    ...prev.find((product) => product.name === text),
-                  }))
-                }
-              />
-              <Text>Quantity</Text>
+      <View>
+        {products.map((p) => (
+          // small bug here, there could be 2 with the same name
+          // the name should be unique, or have some id that is unique
+          <View style={styles.product} key={`${p.name}`}>
+            <Text style={styles.productNameText}>{p.name}</Text>
+            <View style={styles.productData}>
+              <View style={styles.productInput}>
+                <TextInput
+                  value={p.quantity.toString()}
+                  onChangeText={(text) =>
+                    setProducts((prev) => ({
+                      ...prev.filter((product) => product.name !== text),
+                      ...prev.find((product) => product.name === text),
+                    }))
+                  }
+                />
+                <Text style={styles.productInputText}>Quantity</Text>
+              </View>
+              <View style={styles.productInput}>
+                <TextInput
+                  value={p.totalPrice.toString()}
+                  onChangeText={(text) =>
+                    setProducts((prev) => ({
+                      ...prev.filter((product) => product.name !== text),
+                      ...prev.find((product) => product.name === text),
+                    }))
+                  }
+                />
+                <Text style={styles.productInputText}>Total price</Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => setAssignedPayersModalOpen(true)}
+              >
+                <Entypo name="info" size={20} color={Colors.theme1.text1} />
+              </TouchableOpacity>
             </View>
           </View>
-        </View>
-      ))}
-      <TouchableOpacity onPress={addProduct}>
-        <View>
+        ))}
+      </View>
+      <AssignedPayersModal
+        onClose={() => setAssignedPayersModalOpen(false)}
+        open={assignedPayersModalOpen}
+      />
+      <InitialPayersModal
+        onClose={() => setInitialPayersModalOpen(false)}
+        open={initialPayersModalOpen}
+      />
+      <TouchableOpacity>
+        <View style={styles.addProductButton}>
           <Ionicons
             name="bag-add-outline"
             size={20}
             color={Colors.theme1.text2}
           />
-          <Text>Add product</Text>
+          <Text style={styles.addProductText}>Add product</Text>
         </View>
       </TouchableOpacity>
     </View>
   );
 }
 
+const modalStyles = StyleSheet.create({});
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
     backgroundColor: Colors.theme1.background2,
+    gap: 20,
   },
   titleInput: {
     fontSize: 24,
@@ -108,16 +202,40 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     padding: 10,
+    backgroundColor: Colors.theme1.button5,
+    borderRadius: 20,
   },
   productName: {},
   productNameText: {
+    fontFamily: "AlegreyaMedium",
+  },
+  addProductText: {
     fontFamily: "AlegreyaMedium",
   },
   productData: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    gap: 10,
   },
-  productInput: {},
+  productInput: {
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  productInputText: {
+    fontFamily: "AlegreyaMedium",
+    fontSize: 10,
+  },
   products: {},
+  addProductButton: {
+    backgroundColor: Colors.theme1.button3,
+    alignSelf: "center",
+    flexDirection: "row",
+    gap: 10,
+    padding: 10,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+  },
 });
