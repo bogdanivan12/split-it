@@ -14,6 +14,7 @@ const dummyBills: Bill[] = [
     name: "Electricity",
     amount: "$120",
     dateCreated: "2023-12-01",
+    initialPayers: [],
   },
   {
     owner: {
@@ -25,6 +26,7 @@ const dummyBills: Bill[] = [
     name: "Water",
     amount: "$45",
     dateCreated: "2023-12-05",
+    initialPayers: [],
   },
   {
     owner: {
@@ -36,6 +38,7 @@ const dummyBills: Bill[] = [
     name: "Internet",
     amount: "$80",
     dateCreated: "2023-12-10",
+    initialPayers: [],
   },
 ];
 

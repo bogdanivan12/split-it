@@ -1,7 +1,16 @@
-import { View, TextInput, StyleSheet } from "react-native";
+import {
+  View,
+  TextInput,
+  StyleSheet,
+  TouchableOpacity,
+  Text,
+} from "react-native";
 import React, { useState } from "react";
 import { Colors } from "@/constants/Theme";
 import { useGlobalSearchParams } from "expo-router";
+import { Product } from "@/types/Bill.types";
+import { UserSummary } from "@/types/User.types";
+import { Ionicons } from "@expo/vector-icons";
 
 // TODO: ce se intampla daca un user iese din grup in timp ce creezi un bill?
 
@@ -22,6 +31,12 @@ import { useGlobalSearchParams } from "expo-router";
 export default function Layout() {
   const { billId } = useGlobalSearchParams();
   const [title, setTitle] = useState("");
+  const [products, setProducts] = useState<Product[]>([]);
+  const [initialPayers, setInitialPayers] = useState<UserSummary[]>([]);
+  const [totalPrice, setTotalPrice] = useState<number | null>(null);
+
+  const addProduct = () => {};
+
   if (billId) return null;
   return (
     <View style={styles.container}>
@@ -33,6 +48,33 @@ export default function Layout() {
         value={title}
         onChangeText={(text) => setTitle(text)}
       />
+      {products.map((p) => (
+        // small bug here, there could be 2 with the same name
+        <View key={`${p.name}`}>
+          <View>
+            <Text>{p.name}</Text>
+          </View>
+          <View>
+            <View>
+              <TextInput
+                value={p.quantity.toString()}
+                onChangeText={(text) => setProducts(prev => ({...prev, ...prev}))}
+              />
+              <Text>Quantity</Text>
+            </View>
+          </View>
+        </View>
+      ))}
+      <TouchableOpacity onPress={addProduct}>
+        <View>
+          <Ionicons
+            name="bag-add-outline"
+            size={20}
+            color={Colors.theme1.text2}
+          />
+          <Text>Add product</Text>
+        </View>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -53,4 +95,23 @@ const styles = StyleSheet.create({
     borderWidth: 0,
     padding: 5,
   },
+  product: {
+    alignSelf: "center",
+    width: "90%",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 10,
+  },
+  productName: {},
+  productNameText: {
+    fontFamily: "AlegreyaMedium",
+  },
+  productData: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  productInput: {},
+  products: {},
 });
