@@ -1,6 +1,9 @@
+from datetime import datetime
 from typing import Optional, List
 from beanie import PydanticObjectId
 from pydantic import BaseModel, Field, EmailStr
+
+from backend.common import models
 
 
 class UpdateUserRequest(BaseModel):
@@ -29,6 +32,21 @@ class InviteToGroupRequest(BaseModel):
     username: str = Field(min_length=5, max_length=20)
     group_id: PydanticObjectId
 
+
 class InviteToGroupRequestBulk(BaseModel):
     group_id: PydanticObjectId
     usernames: List[str]
+
+
+class CreateBillRequest(BaseModel):
+    bill_type: models.BillType = models.BillType.SPLIT_BY_MEMBERS
+    group_id: Optional[PydanticObjectId] = Field(default=None)
+    name: str = Field(min_length=5, max_length=30)
+    description: str = Field(max_length=100, default="")
+    initial_payers: Optional[List[models.Payer]] = Field(default_factory=list)
+    date: datetime = Field(default_factory=datetime.now)
+    payer_ids: Optional[List[models.Payer]] = Field(default_factory=list)
+    products: Optional[List[models.Product]] = Field(default_factory=list)
+
+    class Config:
+        json_encoders = {PydanticObjectId: str}

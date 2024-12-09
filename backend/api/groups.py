@@ -10,7 +10,8 @@ from fastapi import APIRouter, HTTPException, Depends
 from backend.api import users
 from backend.common import models
 from backend.common import config_info
-from backend.api import api_request_classes as api_req, api_response_classes as api_res
+from backend.api import api_request_classes as api_req
+from backend.api import api_response_classes as api_res
 
 router = APIRouter(prefix="/api/v1/groups", tags=["groups"])
 db = config_info.get_db()
