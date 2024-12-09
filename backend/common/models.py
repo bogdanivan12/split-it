@@ -69,7 +69,7 @@ class Bill(BaseModel):
     description: str = Field(max_length=100, default="")
     initial_payers: Optional[List[Payer]] = Field(default_factory=list)
     date: datetime = Field(default_factory=datetime.now)
-    payer_ids: Optional[List[Payer]] = Field(default_factory=list)
+    payers: Optional[List[Payer]] = Field(default_factory=list)
     products: Optional[List[Product]] = Field(default_factory=list)
     payment_ids: List[PydanticObjectId] = Field(default_factory=list)
 

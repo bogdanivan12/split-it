@@ -1,5 +1,4 @@
 from starlette import status
-from datetime import datetime
 from beanie import PydanticObjectId
 from fastapi import APIRouter, HTTPException, Depends
 
@@ -30,7 +29,7 @@ async def create_bill(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail="Group not found")
 
-    for payer in bill.payer_ids:
+    for payer in bill.payers:
         if not db["users"].find_one({"_id": payer.user_id}):
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                                 detail="Member not found")
@@ -66,4 +65,3 @@ async def create_bill(
 
     bill.id = PydanticObjectId(db_result.inserted_id)
     return bill
-
