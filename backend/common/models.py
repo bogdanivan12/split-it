@@ -1,8 +1,8 @@
-from beanie import PydanticObjectId
-from datetime import datetime
 from enum import Enum
-from pydantic import BaseModel, Field, EmailStr
+from datetime import datetime
 from typing import List, Optional
+from beanie import PydanticObjectId
+from pydantic import BaseModel, Field, EmailStr
 
 
 class User(BaseModel):
@@ -23,6 +23,7 @@ class User(BaseModel):
 class UserInDB(User):
     hashed_password: str
 
+
 class Group(BaseModel):
     id: Optional[PydanticObjectId] = Field(alias="_id", default=None)
     name: str = Field(min_length=5, max_length=30)
@@ -32,31 +33,48 @@ class Group(BaseModel):
     bill_ids: Optional[List[PydanticObjectId]] = Field(default_factory=list)
     join_code: Optional[str] = Field(min_length=4, max_length=20, default=None)
 
-class InitialPayer(BaseModel):
-    user_id: str
-    amount: float
+    class Config:
+        json_encoders = {PydanticObjectId: str}
+
+
+class Payer(BaseModel):
+    user_id: Optional[PydanticObjectId] = Field(default=None)
+    amount: float = Field(gt=0)
+
+    class Config:
+        json_encoders = {PydanticObjectId: str}
+
 
 class Product(BaseModel):
-    name: str
-    price: float
-    quantity: int = 1
-    assigned_payer_ids: List[str] = []
+    name: str = Field(min_length=1, max_length=30)
+    total_price: float = Field(gt=0)
+    quantity: int = Field(gt=0, default=1)
+    assigned_payers: List[Payer] = Field(default_factory=list)
+
+    class Config:
+        json_encoders = {PydanticObjectId: str}
+
+
+class BillType(str, Enum):
+    SPLIT_BY_MEMBERS = "SPLIT_BY_MEMBERS"
+    SPLIT_BY_PRODUCTS = "SPLIT_BY_PRODUCTS"
 
 
 class Bill(BaseModel):
-    id: str
-    owner_id: str
-    group_id: str
-    name: str
-    description: str = ""
-    initial_payers: List[InitialPayer] = []
-    amount: float
-    date: datetime
-    # if member_ids is None, the bill is split by products
-    member_ids: Optional[List[str]] = []
-    # if products is None, the bill is split evenly by members
-    products: Optional[List[Product]] = None
-    payment_ids: List[str] = []
+    id: Optional[PydanticObjectId] = Field(alias="_id", default=None)
+    bill_type: BillType = BillType.SPLIT_BY_MEMBERS
+    owner_id: Optional[PydanticObjectId] = Field(default=None)
+    group_id: Optional[PydanticObjectId] = Field(default=None)
+    name: str = Field(min_length=5, max_length=30)
+    description: str = Field(max_length=100, default="")
+    initial_payers: Optional[List[Payer]] = Field(default_factory=list)
+    date: datetime = Field(default_factory=datetime.now)
+    payers: Optional[List[Payer]] = Field(default_factory=list)
+    products: Optional[List[Product]] = Field(default_factory=list)
+    payment_ids: List[PydanticObjectId] = Field(default_factory=list)
+
+    class Config:
+        json_encoders = {PydanticObjectId: str}
 
 
 class PaymentMethod(str, Enum):
@@ -72,14 +90,14 @@ class PaymentStatus(str, Enum):
 
 
 class Payment(BaseModel):
-    id: str
-    bill_id: str
-    amount: float
-    payer_id: str
-    recipient_id: str
-    date: datetime
-    method: PaymentMethod = PaymentMethod.NOT_SELECTED
-    status: PaymentStatus = PaymentStatus.NOT_STARTED
+    id: Optional[PydanticObjectId] = Field(alias="_id", default=None)
+    bill_id: Optional[PydanticObjectId] = Field(default=None)
+    amount: float = Field(gt=0)
+    payer_id: Optional[PydanticObjectId] = Field(default=None)
+    recipient_id: Optional[PydanticObjectId] = Field(default=None)
+    date: datetime = Field(default_factory=datetime.now)
+    method: PaymentMethod = Field(default=PaymentMethod.NOT_SELECTED)
+    status: PaymentStatus = Field(default=PaymentStatus.NOT_STARTED)
 
 
 class RequestStatus(str, Enum):
@@ -106,7 +124,6 @@ class Request(BaseModel):
 
     class Config:
         json_encoders = {PydanticObjectId: str}
-
 
 
 class Token(BaseModel):
