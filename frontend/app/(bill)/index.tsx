@@ -50,6 +50,7 @@ export default function Layout() {
       />
       {products.map((p) => (
         // small bug here, there could be 2 with the same name
+        // the name should be unique, or have some id that is unique
         <View key={`${p.name}`}>
           <View>
             <Text>{p.name}</Text>
@@ -58,7 +59,12 @@ export default function Layout() {
             <View>
               <TextInput
                 value={p.quantity.toString()}
-                onChangeText={(text) => setProducts(prev => ({...prev, ...prev}))}
+                onChangeText={(text) =>
+                  setProducts((prev) => ({
+                    ...prev.filter((product) => product.name !== text),
+                    ...prev.find((product) => product.name === text),
+                  }))
+                }
               />
               <Text>Quantity</Text>
             </View>
