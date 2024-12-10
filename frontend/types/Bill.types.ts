@@ -13,5 +13,6 @@ export type Product = {
   name: string;
   quantity: number;
   totalPrice: number;
-  assignedPayers: { user: UserSummary; assigned: boolean }[];
+  assignedPayers: Payer[];
 };
+export type Payer = { user: UserSummary; assigned: boolean };

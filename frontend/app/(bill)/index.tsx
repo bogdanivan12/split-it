@@ -8,7 +8,7 @@ import {
 import React, { useEffect, useState } from "react";
 import { Colors } from "@/constants/Theme";
 import { router, useGlobalSearchParams } from "expo-router";
-import { Product } from "@/types/Bill.types";
+import { Payer, Product } from "@/types/Bill.types";
 import { UserSummary } from "@/types/User.types";
 import { Entypo, Ionicons } from "@expo/vector-icons";
 import { useGroup } from "@/utils/hooks/useGroup";
@@ -16,6 +16,7 @@ import { useAuth } from "@/context/AuthContext";
 import { Group } from "@/types/Group.types";
 import CenteredModal from "@/components/modals/CenteredModal";
 import { CenteredLogoLoadingComponent } from "@/components/LogoLoadingComponent";
+import { generalStyles } from "@/constants/SharedStyles";
 
 // TODO: ce se intampla daca un user iese din grup in timp ce creezi un bill?
 
@@ -36,9 +37,11 @@ import { CenteredLogoLoadingComponent } from "@/components/LogoLoadingComponent"
 const AssignedPayersModal = ({
   open,
   onClose,
+  payers,
 }: {
   open: boolean;
   onClose: () => void;
+  payers: Payer[];
 }) => {
   return (
     <CenteredModal onClose={onClose} visible={open}>
@@ -115,33 +118,55 @@ export default function Layout() {
         onChangeText={(text) => setTitle(text)}
       />
       <View>
-        {products.map((p) => (
-          // small bug here, there could be 2 with the same name
-          // the name should be unique, or have some id that is unique
+        {products.map((p, index) => (
           <View style={styles.product} key={`${p.name}`}>
+            <TextInput
+              style={styles.productInput}
+              onChangeText={(text) => {
+                const updatedProducts = products.map((product, i) =>
+                  i === index ? { ...product, name: text } : product
+                );
+                setProducts(updatedProducts);
+              }}
+              value={p.name}
+              placeholder="Name..."
+              placeholderTextColor={Colors.theme1.inputPlaceholder}
+            />
             <Text style={styles.productNameText}>{p.name}</Text>
             <View style={styles.productData}>
-              <View style={styles.productInput}>
+              <View style={styles.productInputContainer}>
                 <TextInput
+                  style={styles.productInput}
                   value={p.quantity.toString()}
-                  onChangeText={(text) =>
-                    setProducts((prev) => ({
-                      ...prev.filter((product) => product.name !== text),
-                      ...prev.find((product) => product.name === text),
-                    }))
-                  }
+                  keyboardType="numeric"
+                  onChangeText={(text) => {
+                    const updatedProducts = products.map((product, i) =>
+                      i === index
+                        ? { ...product, quantity: parseInt(text) }
+                        : product
+                    );
+                    setProducts(updatedProducts);
+                  }}
+                  placeholder="..."
+                  placeholderTextColor={Colors.theme1.inputPlaceholder}
                 />
                 <Text style={styles.productInputText}>Quantity</Text>
               </View>
-              <View style={styles.productInput}>
+              <View style={styles.productInputContainer}>
                 <TextInput
+                  style={styles.productInput}
                   value={p.totalPrice.toString()}
-                  onChangeText={(text) =>
-                    setProducts((prev) => ({
-                      ...prev.filter((product) => product.name !== text),
-                      ...prev.find((product) => product.name === text),
-                    }))
-                  }
+                  keyboardType="numeric"
+                  onChangeText={(text) => {
+                    const updatedProducts = products.map((product, i) =>
+                      i === index
+                        ? { ...product, totalPrice: parseInt(text) }
+                        : product
+                    );
+                    setProducts(updatedProducts);
+                  }}
+                  placeholder="..."
+                  placeholderTextColor={Colors.theme1.inputPlaceholder}
                 />
                 <Text style={styles.productInputText}>Total price</Text>
               </View>
@@ -162,16 +187,30 @@ export default function Layout() {
         onClose={() => setInitialPayersModalOpen(false)}
         open={initialPayersModalOpen}
       />
-      <TouchableOpacity>
-        <View style={styles.addProductButton}>
-          <Ionicons
-            name="bag-add-outline"
-            size={20}
-            color={Colors.theme1.text2}
-          />
-          <Text style={styles.addProductText}>Add product</Text>
-        </View>
-      </TouchableOpacity>
+      <View style={styles.addButtonsContainer}>
+        <TouchableOpacity>
+          <View style={styles.addProductButton}>
+            <Ionicons
+              name="bag-add-outline"
+              size={20}
+              color={Colors.theme1.text2}
+            />
+            <Text style={styles.addProductText}>Add product</Text>
+          </View>
+        </TouchableOpacity>
+        <TouchableOpacity>
+          <View style={styles.addProductButton}>
+            <Ionicons
+              name="bag-add-outline"
+              size={20}
+              color={Colors.theme1.text2}
+            />
+            <Text style={styles.addProductText}>
+              Split product from the existing
+            </Text>
+          </View>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -192,6 +231,14 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     color: Colors.theme1.text,
     backgroundColor: Colors.theme1.background2,
+    borderWidth: 0,
+    padding: 5,
+  },
+  productInput: {
+    fontWeight: "bold",
+    fontFamily: "AlegreyaMedium",
+    color: Colors.theme1.text,
+    backgroundColor: Colors.theme1.button5,
     borderWidth: 0,
     padding: 5,
   },
@@ -218,7 +265,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     gap: 10,
   },
-  productInput: {
+  productInputContainer: {
     flexDirection: "column",
     alignItems: "center",
     justifyContent: "center",
@@ -237,5 +284,11 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignItems: "center",
     justifyContent: "center",
+  },
+  addButtonsContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 10,
   },
 });
