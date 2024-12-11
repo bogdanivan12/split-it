@@ -95,6 +95,9 @@ const Bills: React.FC = () => {
           asChild
           href={{
             pathname: `/(bill)`,
+            params: {
+              groupId,
+            },
           }}
         >
           <TouchableOpacity style={styles.addBillContainer}>
