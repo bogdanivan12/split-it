@@ -6,13 +6,13 @@ import {
   Text,
   Dimensions,
   ScrollView,
+  Platform,
 } from "react-native";
 import React, { useEffect, useState } from "react";
 import { Colors } from "@/constants/Theme";
 import { router, useGlobalSearchParams } from "expo-router";
 import { Payer, Product } from "@/types/Bill.types";
-import { UserSummary } from "@/types/User.types";
-import { Entypo, Ionicons } from "@expo/vector-icons";
+import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { useGroup } from "@/utils/hooks/useGroup";
 import { useAuth } from "@/context/AuthContext";
 import { Group } from "@/types/Group.types";
@@ -58,7 +58,7 @@ const AssignedPayersModal = ({
     <CenteredModal onClose={onClose} visible={open}>
       <View style={billModalStyles.container}>
         <Text style={modalStyles.modalTitle}>
-          Who pays for this product?{"\n"}
+          Who should pay for this product?{"\n"}
           {productName}
         </Text>
         <ScrollView
@@ -73,16 +73,19 @@ const AssignedPayersModal = ({
                 <Text style={billModalStyles.payerText}>
                   {payer.user.username}
                 </Text>
-                <BouncyCheckbox
-                  isChecked={payer.assigned}
-                  useBuiltInState={false}
-                  onPress={() => {
-                    const updated = editedPayers.map((p, i) =>
-                      i === idx ? { ...p, assigned: !p.assigned } : p
-                    );
-                    setEditedPayers(updated);
-                  }}
-                />
+                <View style={billModalStyles.checkboxContainer}>
+                  <BouncyCheckbox
+                    isChecked={payer.assigned}
+                    useBuiltInState={false}
+                    onPress={() => {
+                      const updated = editedPayers.map((p, i) =>
+                        i === idx ? { ...p, assigned: !p.assigned } : p
+                      );
+                      setEditedPayers(updated);
+                    }}
+                  />
+                  <Text style={billModalStyles.smallText}>Pays</Text>
+                </View>
               </View>
             ))}
             <TouchableOpacity
@@ -112,13 +115,69 @@ const AssignedPayersModal = ({
 const InitialPayersModal = ({
   open,
   onClose,
+  payers,
+  save,
 }: {
   open: boolean;
   onClose: () => void;
+  save: (payers: Payer[]) => void;
+  payers: Payer[];
 }) => {
+  const [editedPayers, setEditedPayers] = useState(payers);
+  useEffect(() => {
+    setEditedPayers(payers);
+  }, [payers]);
   return (
     <CenteredModal onClose={onClose} visible={open}>
-      <View></View>
+      <View style={billModalStyles.container}>
+        <Text style={modalStyles.modalTitle}>Who pays this bill?</Text>
+        <ScrollView
+          contentContainerStyle={{
+            ...generalStyles.scrollContainer,
+            marginTop: 20,
+          }}
+        >
+          <View style={billModalStyles.payersContainer}>
+            {editedPayers.map((payer, idx) => (
+              <View key={payer.user.id} style={billModalStyles.payer}>
+                <Text style={billModalStyles.payerText}>
+                  {payer.user.username}
+                </Text>
+                <View style={billModalStyles.checkboxContainer}>
+                  <BouncyCheckbox
+                    isChecked={payer.assigned}
+                    useBuiltInState={false}
+                    onPress={() => {
+                      const updated = editedPayers.map((p, i) =>
+                        i === idx ? { ...p, assigned: !p.assigned } : p
+                      );
+                      setEditedPayers(updated);
+                    }}
+                  />
+                  <Text style={billModalStyles.smallText}>Pays</Text>
+                </View>
+              </View>
+            ))}
+            <TouchableOpacity
+              onPress={() => {
+                save(editedPayers);
+                onClose();
+              }}
+            >
+              <View style={billModalStyles.saveButton}>
+                <Text
+                  style={{
+                    ...billModalStyles.payerText,
+                    color: Colors.theme1.text1,
+                  }}
+                >
+                  Save
+                </Text>
+              </View>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </View>
     </CenteredModal>
   );
 };
@@ -151,14 +210,25 @@ const billModalStyles = StyleSheet.create({
     justifyContent: "center",
     gap: 14,
   },
+  checkboxContainer: {
+    flexDirection: "column",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  smallText: {
+    fontFamily: "AlegreyaMedium",
+    fontSize: 14,
+  },
 });
 
 export default function Layout() {
   const { billId, groupId } = useGlobalSearchParams();
   const [title, setTitle] = useState("");
-  const [products, setProducts] = useState<Product[]>([]);
-  const [initialPayers, setInitialPayers] = useState<UserSummary[]>([]);
-  const [totalPrice, setTotalPrice] = useState<number | null>(null);
+  const [products, setProducts] = useState<
+    (Product & { editedPrice: string; isEditing: boolean })[]
+  >([]);
+  const [initialPayers, setInitialPayers] = useState<Payer[]>([]);
+  const [totalPrice, setTotalPrice] = useState<number>(0);
   const [assignedPayersModalOpen, setAssignedPayersModalOpen] = useState(false);
   const [initialPayersModalOpen, setInitialPayersModalOpen] = useState(false);
   const [groupDetails, setGroupDetails] = useState<Group | null>(null);
@@ -168,14 +238,16 @@ export default function Layout() {
   const [restOfTheProductsPrice, setRestOfTheProductsPrice] = useState(0);
 
   const { get: getGroup, loading: groupLoading } = useGroup();
-  const { token } = useAuth();
+  const { token, user } = useAuth();
 
   const extractProduct = () => {
     if (!groupDetails) return;
-    const defaultAssignedPayers: Payer[] = groupDetails.members.map((m) => ({
-      user: m,
-      assigned: true,
-    }));
+    const defaultAssignedPayers: Payer[] = groupDetails.members
+      .concat(groupDetails.owner)
+      .map((m) => ({
+        user: m,
+        assigned: true,
+      }));
     setProducts((prev) => [
       ...prev,
       {
@@ -183,12 +255,18 @@ export default function Layout() {
         name: "",
         quantity: 0,
         totalPrice: 0,
+        editedPrice: "0",
+        isEditing: false,
       },
     ]);
   };
 
   const isLoading = () => {
     return groupLoading;
+  };
+
+  const getAllProductsPriceSum = () => {
+    return products.map((p) => p.totalPrice).reduce((acc, crt) => acc + crt, 0);
   };
 
   useEffect(() => {
@@ -199,6 +277,14 @@ export default function Layout() {
       try {
         const gr = await getGroup(groupId as string, token!);
         setGroupDetails(gr);
+        setInitialPayers(
+          gr.members.concat(gr.owner).map((member) => {
+            return {
+              assigned: member.id === user?.id,
+              user: member,
+            };
+          })
+        );
       } catch (err) {
         router.back();
       }
@@ -218,88 +304,172 @@ export default function Layout() {
         value={title}
         onChangeText={(text) => setTitle(text)}
       />
-      <View style={styles.products}>
-        {products.map((p, index) => (
-          <View style={styles.product} key={index}>
-            <TextInput
-              style={styles.productInput}
-              onChangeText={(text) => {
-                const updatedProducts = products.map((product, i) =>
-                  i === index ? { ...product, name: text } : product
-                );
-                setProducts(updatedProducts);
-              }}
-              value={p.name}
-              placeholder="Name..."
-              placeholderTextColor={Colors.theme1.inputPlaceholder}
-            />
+      <ScrollView contentContainerStyle={styles.scrollProducts}>
+        <View style={styles.products}>
+          {products.map((p, index) => (
+            <View style={{ gap: 7 }} key={index}>
+              <View style={styles.product}>
+                <TextInput
+                  style={styles.productInput}
+                  onChangeText={(text) => {
+                    const updatedProducts = products.map((product, i) =>
+                      i === index ? { ...product, name: text } : product
+                    );
+                    setProducts(updatedProducts);
+                  }}
+                  value={p.name}
+                  placeholder="Name..."
+                  placeholderTextColor={Colors.theme1.inputPlaceholder}
+                />
+                <View style={styles.productData}>
+                  <View style={styles.productInputContainer}>
+                    <TextInput
+                      style={styles.productInput}
+                      value={p.quantity.toString()}
+                      keyboardType="numeric"
+                      onChangeText={(text) => {
+                        const updatedProducts = products.map((product, i) =>
+                          i === index
+                            ? { ...product, quantity: parseInt(text) }
+                            : product
+                        );
+                        setProducts(updatedProducts);
+                      }}
+                      placeholder="..."
+                      placeholderTextColor={Colors.theme1.inputPlaceholder}
+                    />
+                    <Text style={styles.productInputText}>Quantity</Text>
+                  </View>
+                  <View
+                    style={{
+                      ...styles.productInputContainer,
+                      position: "relative",
+                    }}
+                  >
+                    <TextInput
+                      style={styles.productInput}
+                      value={p.totalPrice.toString()}
+                      keyboardType="numeric"
+                      onChangeText={(text) => {
+                        const updatedProducts = products.map((product, i) =>
+                          i === index
+                            ? { ...product, totalPrice: parseFloat(text) }
+                            : product
+                        );
+                        setProducts(updatedProducts);
+                      }}
+                      placeholder="..."
+                      placeholderTextColor={Colors.theme1.inputPlaceholder}
+                    />
+                    <Text style={styles.productInputText}>Total price</Text>
+                  </View>
+                  <TouchableOpacity
+                    onPress={() => {
+                      setAssignedPayersModalOpen(true);
+                      setSelectedProductIndex(index);
+                    }}
+                  >
+                    <MaterialIcons
+                      name="payments"
+                      size={20}
+                      color={Colors.theme1.text1}
+                    />
+                  </TouchableOpacity>
+                </View>
+              </View>
+              {p.isEditing && (
+                <View style={styles.saveProductPriceButtonContainer}>
+                  <TouchableOpacity>
+                    <View style={styles.saveProductPriceButton}>
+                      <Text>Test</Text>
+                    </View>
+                  </TouchableOpacity>
+                  <TouchableOpacity>
+                    <View style={styles.saveProductPriceButton}>
+                      <Text>Test</Text>
+                    </View>
+                  </TouchableOpacity>
+                  <TouchableOpacity>
+                    <View style={styles.saveProductPriceButton}>
+                      <Text>Test</Text>
+                    </View>
+                  </TouchableOpacity>
+                </View>
+              )}
+            </View>
+          ))}
+          <View style={styles.product}>
+            <Text style={styles.productNameText}>Rest of the products</Text>
             <View style={styles.productData}>
               <View style={styles.productInputContainer}>
                 <TextInput
                   style={styles.productInput}
-                  value={p.quantity.toString()}
+                  value={restOfTheProductsPrice.toString()}
                   keyboardType="numeric"
                   onChangeText={(text) => {
-                    const updatedProducts = products.map((product, i) =>
-                      i === index
-                        ? { ...product, quantity: parseInt(text) }
-                        : product
-                    );
-                    setProducts(updatedProducts);
-                  }}
-                  placeholder="..."
-                  placeholderTextColor={Colors.theme1.inputPlaceholder}
-                />
-                <Text style={styles.productInputText}>Quantity</Text>
-              </View>
-              <View style={styles.productInputContainer}>
-                <TextInput
-                  style={styles.productInput}
-                  value={p.totalPrice.toString()}
-                  keyboardType="numeric"
-                  onChangeText={(text) => {
-                    const updatedProducts = products.map((product, i) =>
-                      i === index
-                        ? { ...product, totalPrice: parseFloat(text) }
-                        : product
-                    );
-                    setProducts(updatedProducts);
+                    const newPrice = parseFloat(text);
+                    const priceDiff = newPrice - restOfTheProductsPrice;
+                    setTotalPrice((prev) => prev + priceDiff);
+                    setRestOfTheProductsPrice(parseFloat(text));
                   }}
                   placeholder="..."
                   placeholderTextColor={Colors.theme1.inputPlaceholder}
                 />
                 <Text style={styles.productInputText}>Total price</Text>
               </View>
-              <TouchableOpacity
-                onPress={() => {
-                  setAssignedPayersModalOpen(true);
-                  setSelectedProductIndex(index);
-                }}
-              >
-                <Entypo name="info" size={20} color={Colors.theme1.text1} />
-              </TouchableOpacity>
             </View>
           </View>
-        ))}
-        <View style={styles.product}>
-          <Text style={styles.productNameText}>Rest of the products</Text>
-          <View style={styles.productData}>
-            <View style={styles.productInputContainer}>
-              <TextInput
-                style={styles.productInput}
-                value={restOfTheProductsPrice.toString()}
-                keyboardType="numeric"
-                onChangeText={(text) =>
-                  setRestOfTheProductsPrice(parseFloat(text))
-                }
-                placeholder="..."
-                placeholderTextColor={Colors.theme1.inputPlaceholder}
-              />
-              <Text style={styles.productInputText}>Total price</Text>
-            </View>
+          <View
+            style={{
+              borderBottomColor: Colors.theme1.button,
+              borderBottomWidth: StyleSheet.hairlineWidth,
+            }}
+          />
+          <View style={styles.totalInput}>
+            <Text style={styles.totalText}>Total:</Text>
+            <TextInput
+              style={{
+                ...styles.productInput,
+                backgroundColor: Colors.theme1.background2,
+                color: Colors.theme1.text2,
+              }}
+              value={totalPrice.toString()}
+              keyboardType="numeric"
+              onChangeText={(text) => {
+                const newPrice = parseFloat(text);
+                const productsPrice = getAllProductsPriceSum();
+                if (newPrice < productsPrice) return;
+                setTotalPrice(newPrice);
+                setRestOfTheProductsPrice(newPrice - productsPrice);
+              }}
+              placeholder="..."
+              placeholderTextColor={Colors.theme1.inputPlaceholder}
+            />
           </View>
         </View>
-      </View>
+        <TouchableOpacity onPress={extractProduct}>
+          <View style={styles.addProductButton}>
+            <Ionicons
+              name="bag-add-outline"
+              size={20}
+              color={Colors.theme1.text2}
+            />
+            <Text style={styles.addProductText}>
+              Split product from the existing
+            </Text>
+          </View>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => setInitialPayersModalOpen(true)}>
+          <View style={styles.addProductButton}>
+            <Ionicons
+              name="bag-add-outline"
+              size={20}
+              color={Colors.theme1.text2}
+            />
+            <Text style={styles.addProductText}>Set who pays</Text>
+          </View>
+        </TouchableOpacity>
+      </ScrollView>
       <AssignedPayersModal
         onClose={() => {
           setAssignedPayersModalOpen(false);
@@ -327,21 +497,9 @@ export default function Layout() {
       <InitialPayersModal
         onClose={() => setInitialPayersModalOpen(false)}
         open={initialPayersModalOpen}
+        payers={initialPayers}
+        save={(payers) => setInitialPayers(payers)}
       />
-      <View style={styles.addButtonsContainer}>
-        <TouchableOpacity onPress={extractProduct}>
-          <View style={styles.addProductButton}>
-            <Ionicons
-              name="bag-add-outline"
-              size={20}
-              color={Colors.theme1.text2}
-            />
-            <Text style={styles.addProductText}>
-              Split product from the existing
-            </Text>
-          </View>
-        </TouchableOpacity>
-      </View>
     </View>
   );
 }
@@ -385,12 +543,27 @@ const styles = StyleSheet.create({
   productNameText: {
     fontFamily: "AlegreyaMedium",
   },
+  saveProductPriceButton: {
+    padding: 15,
+    backgroundColor: Colors.theme1.button2,
+    borderRadius: 10,
+  },
+  saveProductPriceButtonContainer: {
+    alignSelf: "flex-end",
+    padding: 5,
+    flexDirection: "row",
+    alignItems: "center",
+    width: 200,
+    gap: 10,
+  },
   addProductText: {
     fontFamily: "AlegreyaMedium",
+    color: Colors.theme1.text2,
   },
   productData: {
     flexDirection: "row",
     alignItems: "center",
+    position: "relative",
     justifyContent: "space-between",
     gap: 10,
   },
@@ -403,8 +576,17 @@ const styles = StyleSheet.create({
     fontFamily: "AlegreyaMedium",
     fontSize: 10,
   },
+  totalText: {
+    fontFamily: "AlegreyaMedium",
+    fontSize: 14,
+    color: Colors.theme1.text2,
+  },
   products: {
     gap: 15,
+  },
+  scrollProducts: {
+    gap: 15,
+    paddingBottom: 100,
   },
   addProductButton: {
     backgroundColor: Colors.theme1.button3,
@@ -416,10 +598,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  addButtonsContainer: {
+  totalInput: {
+    alignSelf: "flex-end",
     flexDirection: "row",
-    justifyContent: "center",
+    gap: 8,
     alignItems: "center",
-    gap: 10,
   },
 });
