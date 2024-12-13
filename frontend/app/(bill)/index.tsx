@@ -10,10 +10,10 @@ import {
   ViewStyle,
   TextStyle,
 } from "react-native";
-import React, { ReactNode, useEffect, useState } from "react";
+import React, { ComponentProps, ReactNode, useEffect, useState } from "react";
 import { Colors } from "@/constants/Theme";
 import { router, useGlobalSearchParams } from "expo-router";
-import { Payer, Product } from "@/types/Bill.types";
+import { Bill, Payer, Product } from "@/types/Bill.types";
 import {
   FontAwesome6,
   Fontisto,
@@ -30,6 +30,8 @@ import {
   InitialPayersModal,
 } from "@/components/modals/PayersModal";
 import Tooltip from "react-native-walkthrough-tooltip";
+import { UserSummary } from "@/types/User.types";
+import { useBill } from "@/utils/hooks/useBill";
 
 const ButtonWithTooltip = ({
   onPress,
@@ -137,8 +139,27 @@ const DeleteProduct = ({
   );
 };
 
+const EditableInput = ({
+  canEdit,
+  textInputProps,
+}: {
+  canEdit: boolean;
+  textInputProps: ComponentProps<typeof TextInput>;
+}) => {
+  return (
+    <>
+      {canEdit ? (
+        <TextInput {...textInputProps} />
+      ) : (
+        <Text style={textInputProps.style}>{textInputProps.value}</Text>
+      )}
+    </>
+  );
+};
+
 export default function Layout() {
   const { billId, groupId } = useGlobalSearchParams();
+  const [bill, setBill] = useState<Bill | null>(null);
   const [title, setTitle] = useState("");
   const [products, setProducts] = useState<
     (Product & { editedPrice: string; isNew: boolean; split: boolean })[]
@@ -163,7 +184,84 @@ export default function Layout() {
     useState("0");
 
   const { get: getGroup, loading: groupLoading } = useGroup();
+  const { get: getBill, loading: billLoading } = useBill();
   const { token, user } = useAuth();
+  const [isBillOwner, setIsBillOwner] = useState(true);
+
+  useEffect(() => {
+    if (!groupId) {
+      router.back();
+    }
+    const f = async () => {
+      try {
+        const gr = await getGroup(groupId as string, token!);
+        if (billId) {
+          const b = await getBill(billId as string, token!);
+          setBill(b);
+          mapFromBill(b, gr);
+        } else {
+          setInitialPayers(
+            gr.members.concat(gr.owner).map((member) => {
+              return {
+                assigned: member.id === user?.id,
+                user: member,
+              };
+            })
+          );
+        }
+        setGroupDetails(gr);
+      } catch (err) {
+        router.back();
+      }
+    };
+    f();
+  }, []);
+
+  const mapToBill = (): Bill => {
+    // if I need to call this, then the owner is the current user
+    // if id is empty, then call the new api
+    return {
+      amount: totalPrice,
+      dateCreated: bill?.dateCreated || "",
+      id: bill?.id || "",
+      initialPayers: initialPayers.filter((p) => p.assigned).map((p) => p.user),
+      name: title,
+      owner: {
+        id: user!.id,
+        fullName: user!.fullName,
+        username: user!.username,
+      },
+      products,
+    };
+  };
+
+  const mapFromBill = (bill: Bill, group: Group) => {
+    setIsBillOwner(bill.owner.id === user!.id);
+    setTotalPrice(bill.amount);
+    const initialPayersIds = bill.initialPayers.map((p) => p.id);
+    setInitialPayers(
+      group.members.concat(group.owner).map((member) => {
+        return {
+          assigned: initialPayersIds.includes(member.id),
+          user: member,
+        };
+      })
+    );
+    setProducts(
+      bill.products.map((p) => ({
+        ...p,
+        isNew: false,
+        split: false,
+        editedPrice: p.totalPrice.toString(),
+      }))
+    );
+    setRestOfTheProductsPrice(
+      bill.amount -
+        bill.products
+          .map((p) => p.totalPrice)
+          .reduce((acc, crt) => acc + crt, 0)
+    );
+  };
 
   const extractProduct = () => {
     if (!groupDetails) return;
@@ -236,35 +334,12 @@ export default function Layout() {
   };
 
   const isLoading = () => {
-    return groupLoading;
+    return groupLoading || billLoading;
   };
 
   const getAllProductsPriceSum = () => {
     return products.map((p) => p.totalPrice).reduce((acc, crt) => acc + crt, 0);
   };
-
-  useEffect(() => {
-    if (!groupId) {
-      return;
-    }
-    const f = async () => {
-      try {
-        const gr = await getGroup(groupId as string, token!);
-        setGroupDetails(gr);
-        setInitialPayers(
-          gr.members.concat(gr.owner).map((member) => {
-            return {
-              assigned: member.id === user?.id,
-              user: member,
-            };
-          })
-        );
-      } catch (err) {
-        router.back();
-      }
-    };
-    f();
-  }, []);
 
   useEffect(() => {
     setEditedRestOfTheProductsPrice(restOfTheProductsPrice.toString());
@@ -274,52 +349,62 @@ export default function Layout() {
     setEditedTotalPrice(totalPrice.toString());
   }, [totalPrice]);
 
-  if (billId) return null;
   if (isLoading()) return <CenteredLogoLoadingComponent />;
   return (
     <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
       <View style={styles.container}>
-        <TextInput
-          style={styles.titleInput}
-          placeholder="Enter a bill title..."
-          placeholderTextColor={Colors.theme1.inputPlaceholder}
-          underlineColorAndroid="transparent"
-          value={title}
-          onChangeText={(text) => setTitle(text)}
+        <EditableInput
+          canEdit={isBillOwner}
+          textInputProps={{
+            style: styles.titleInput,
+            placeholder: "Enter a bill title...",
+            placeholderTextColor: Colors.theme1.inputPlaceholder,
+            underlineColorAndroid: "transparent",
+            value: title,
+            onChangeText: (text) => setTitle(text),
+          }}
         />
         <ScrollView contentContainerStyle={styles.scrollProducts}>
-          <View style={styles.products}>
+          <View style={styles.products} onStartShouldSetResponder={() => true}>
             {products.map((p, index) => (
               <View style={{ gap: 7 }} key={index}>
                 <View style={styles.product}>
-                  <TextInput
-                    style={styles.productInput}
-                    onChangeText={(text) => {
-                      const updatedProducts = products.map((product, i) =>
-                        i === index ? { ...product, name: text } : product
-                      );
-                      setProducts(updatedProducts);
+                  <EditableInput
+                    canEdit={isBillOwner}
+                    textInputProps={{
+                      style: styles.productInput,
+                      placeholder: "Name...",
+                      placeholderTextColor: Colors.theme1.inputPlaceholder,
+                      underlineColorAndroid: "transparent",
+                      value: p.name,
+                      onChangeText: (text) => {
+                        const updatedProducts = products.map((product, i) =>
+                          i === index ? { ...product, name: text } : product
+                        );
+                        setProducts(updatedProducts);
+                      },
                     }}
-                    value={p.name}
-                    placeholder="Name..."
-                    placeholderTextColor={Colors.theme1.inputPlaceholder}
                   />
                   <View style={styles.productData}>
                     <View style={styles.productInputContainer}>
-                      <TextInput
-                        style={styles.productInput}
-                        value={p.quantity.toString()}
-                        keyboardType="numeric"
-                        onChangeText={(text) => {
-                          const updatedProducts = products.map((product, i) =>
-                            i === index
-                              ? { ...product, quantity: parseInt(text) }
-                              : product
-                          );
-                          setProducts(updatedProducts);
+                      <EditableInput
+                        canEdit={isBillOwner}
+                        textInputProps={{
+                          style: styles.productInput,
+                          placeholder: "...",
+                          keyboardType: "numeric",
+                          placeholderTextColor: Colors.theme1.inputPlaceholder,
+                          underlineColorAndroid: "transparent",
+                          value: p.quantity.toString(),
+                          onChangeText: (text) => {
+                            const updatedProducts = products.map((product, i) =>
+                              i === index
+                                ? { ...product, quantity: parseInt(text) }
+                                : product
+                            );
+                            setProducts(updatedProducts);
+                          },
                         }}
-                        placeholder="..."
-                        placeholderTextColor={Colors.theme1.inputPlaceholder}
                       />
                       <Text style={styles.productInputText}>Quantity</Text>
                     </View>
@@ -329,26 +414,32 @@ export default function Layout() {
                         position: "relative",
                       }}
                     >
-                      <TextInput
-                        style={styles.productInput}
-                        value={p.editedPrice}
-                        keyboardType="numeric"
-                        onFocus={() => {
-                          resetProductsPrice();
-                          setDeletingFieldIndex(null);
-                          setEditingFieldIndex(index);
+                      <EditableInput
+                        canEdit={isBillOwner}
+                        textInputProps={{
+                          style: styles.productInput,
+                          keyboardType: "numeric",
+                          placeholderTextColor: Colors.theme1.inputPlaceholder,
+                          underlineColorAndroid: "transparent",
+                          value: p.editedPrice,
+                          onFocus: () => {
+                            resetProductsPrice();
+                            setDeletingFieldIndex(null);
+                            setEditingFieldIndex(index);
+                          },
+                          onChangeText: (text) => {
+                            setProducts((prev) =>
+                              prev.map((p, i) =>
+                                i === index
+                                  ? {
+                                      ...p,
+                                      editedPrice: text.replace(",", "."),
+                                    }
+                                  : p
+                              )
+                            );
+                          },
                         }}
-                        onChangeText={(text) => {
-                          setProducts((prev) =>
-                            prev.map((p, i) =>
-                              i === index
-                                ? { ...p, editedPrice: text.replace(",", ".") }
-                                : p
-                            )
-                          );
-                        }}
-                        placeholder="..."
-                        placeholderTextColor={Colors.theme1.inputPlaceholder}
                       />
                       <Text style={styles.productInputText}>Total price</Text>
                     </View>
@@ -364,22 +455,24 @@ export default function Layout() {
                         color={Colors.theme1.text1}
                       />
                     </TouchableOpacity>
-                    <TouchableOpacity
-                      onPress={() => {
-                        if (p.isNew) {
-                          deleteProduct(index);
-                          return;
-                        }
-                        setDeletingFieldIndex(index);
-                        setEditingFieldIndex(null);
-                      }}
-                    >
-                      <Fontisto
-                        name="shopping-basket-remove"
-                        size={20}
-                        color={Colors.theme1.text1}
-                      />
-                    </TouchableOpacity>
+                    {isBillOwner && (
+                      <TouchableOpacity
+                        onPress={() => {
+                          if (p.isNew) {
+                            deleteProduct(index);
+                            return;
+                          }
+                          setDeletingFieldIndex(index);
+                          setEditingFieldIndex(null);
+                        }}
+                      >
+                        <Fontisto
+                          name="shopping-basket-remove"
+                          size={20}
+                          color={Colors.theme1.text1}
+                        />
+                      </TouchableOpacity>
+                    )}
                   </View>
                 </View>
                 {index === editingFieldIndex && (
@@ -455,22 +548,26 @@ export default function Layout() {
                   </Text>
                   <View style={styles.productData}>
                     <View style={styles.productInputContainer}>
-                      <TextInput
-                        onFocus={() => {
-                          resetProductsPrice();
-                          setDeletingFieldIndex(null);
-                          setEditingFieldIndex(-2);
+                      <EditableInput
+                        canEdit={isBillOwner}
+                        textInputProps={{
+                          style: styles.productInput,
+                          placeholder: "...",
+                          keyboardType: "numeric",
+                          placeholderTextColor: Colors.theme1.inputPlaceholder,
+                          underlineColorAndroid: "transparent",
+                          value: editedRestOfTheProductsPrice,
+                          onChangeText: (text) => {
+                            setEditedRestOfTheProductsPrice(
+                              text.replace(",", ".")
+                            );
+                          },
+                          onFocus: () => {
+                            resetProductsPrice();
+                            setDeletingFieldIndex(null);
+                            setEditingFieldIndex(-2);
+                          },
                         }}
-                        style={styles.productInput}
-                        value={editedRestOfTheProductsPrice.toString()}
-                        keyboardType="numeric"
-                        onChangeText={(text) => {
-                          setEditedRestOfTheProductsPrice(
-                            text.replace(",", ".")
-                          );
-                        }}
-                        placeholder="..."
-                        placeholderTextColor={Colors.theme1.inputPlaceholder}
                       />
                       <Text style={styles.productInputText}>Total price</Text>
                     </View>
@@ -503,14 +600,17 @@ export default function Layout() {
                 borderBottomWidth: StyleSheet.hairlineWidth,
               }}
             />
-            {totalPrice === 0 && (
+            {totalPrice === 0 && isBillOwner && (
               <View
-                style={{ alignSelf: totalPrice > 0 ? "flex-end" : "center" }}
+                style={{
+                  alignSelf:
+                    totalPrice <= 0 && isBillOwner ? "center" : "flex-end",
+                }}
               >
                 <Text
                   style={{
                     ...styles.enterPriceText,
-                    fontSize: totalPrice > 0 ? 14 : 20,
+                    fontSize: totalPrice <= 0 && isBillOwner ? 20 : 14,
                   }}
                 >
                   Enter the total price of the bill below
@@ -520,36 +620,41 @@ export default function Layout() {
             <View
               style={{
                 ...styles.totalInputWrapper,
-                alignSelf: totalPrice > 0 ? "flex-end" : "center",
+                alignSelf:
+                  totalPrice <= 0 && isBillOwner ? "center" : "flex-end",
               }}
             >
               <View style={styles.totalInput}>
                 <Text
                   style={{
                     ...styles.totalText,
-                    fontSize: totalPrice > 0 ? 14 : 20,
+                    fontSize: totalPrice <= 0 && isBillOwner ? 20 : 14,
                   }}
                 >
                   Total:
                 </Text>
-                <TextInput
-                  style={{
-                    ...styles.productInput,
-                    backgroundColor: Colors.theme1.background2,
-                    color: Colors.theme1.text2,
-                    fontSize: totalPrice > 0 ? 14 : 20,
-                  }}
-                  value={editedTotalPrice}
-                  keyboardType="numeric"
-                  onChangeText={(text) => {
-                    setEditedTotalPrice(text.replace(",", "."));
-                  }}
-                  placeholder="..."
-                  placeholderTextColor={Colors.theme1.inputPlaceholder}
-                  onFocus={() => {
-                    resetProductsPrice();
-                    setDeletingFieldIndex(null);
-                    setEditingFieldIndex(-1);
+                <EditableInput
+                  canEdit={isBillOwner}
+                  textInputProps={{
+                    style: {
+                      ...styles.productInput,
+                      backgroundColor: Colors.theme1.background2,
+                      color: Colors.theme1.text2,
+                      fontSize: totalPrice <= 0 && isBillOwner ? 20 : 14,
+                    },
+                    placeholder: "...",
+                    keyboardType: "numeric",
+                    placeholderTextColor: Colors.theme1.inputPlaceholder,
+                    underlineColorAndroid: "transparent",
+                    value: editedTotalPrice,
+                    onChangeText: (text) => {
+                      setEditedTotalPrice(text.replace(",", "."));
+                    },
+                    onFocus: () => {
+                      resetProductsPrice();
+                      setDeletingFieldIndex(null);
+                      setEditingFieldIndex(-1);
+                    },
                   }}
                 />
               </View>
@@ -579,7 +684,7 @@ export default function Layout() {
               )}
             </View>
           </View>
-          {totalPrice > 0 && (
+          {totalPrice > 0 && isBillOwner && (
             <View style={styles.buttonsContainer}>
               <ButtonWithTooltip
                 onPress={extractProduct}
@@ -625,6 +730,7 @@ export default function Layout() {
             setAssignedPayersModalOpen(false);
             setSelectedProductIndex(null);
           }}
+          canEdit={isBillOwner}
           open={assignedPayersModalOpen}
           payers={
             selectedProductIndex !== null
@@ -646,6 +752,7 @@ export default function Layout() {
         />
         <InitialPayersModal
           onClose={() => setInitialPayersModalOpen(false)}
+          canEdit={isBillOwner}
           open={initialPayersModalOpen}
           payers={initialPayers}
           save={(payers) => setInitialPayers(payers)}

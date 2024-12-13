@@ -19,12 +19,14 @@ export const AssignedPayersModal = ({
   payers,
   productName,
   save,
+  canEdit,
 }: {
   open: boolean;
   onClose: () => void;
   payers: Payer[];
   productName: string;
   save: (payers: Payer[]) => void;
+  canEdit?: boolean;
 }) => {
   const [editedPayers, setEditedPayers] = useState(payers);
   useEffect(() => {
@@ -45,7 +47,11 @@ export const AssignedPayersModal = ({
         >
           <View style={billModalStyles.payersContainer}>
             {editedPayers.map((payer, idx) => (
-              <View key={payer.user.id} style={billModalStyles.payer}>
+              <View
+                key={payer.user.id}
+                style={billModalStyles.payer}
+                onStartShouldSetResponder={() => true}
+              >
                 <Text style={billModalStyles.payerText}>
                   {payer.user.username}
                 </Text>
@@ -54,6 +60,7 @@ export const AssignedPayersModal = ({
                     isChecked={payer.assigned}
                     useBuiltInState={false}
                     onPress={() => {
+                      if (!canEdit) return;
                       const updated = editedPayers.map((p, i) =>
                         i === idx ? { ...p, assigned: !p.assigned } : p
                       );
@@ -92,11 +99,13 @@ export const InitialPayersModal = ({
   onClose,
   payers,
   save,
+  canEdit,
 }: {
   open: boolean;
   onClose: () => void;
   save: (payers: Payer[]) => void;
   payers: Payer[];
+  canEdit?: boolean;
 }) => {
   const [editedPayers, setEditedPayers] = useState(payers);
   useEffect(() => {
@@ -112,7 +121,10 @@ export const InitialPayersModal = ({
             marginTop: 20,
           }}
         >
-          <View style={billModalStyles.payersContainer}>
+          <View
+            style={billModalStyles.payersContainer}
+            onStartShouldSetResponder={() => true}
+          >
             {editedPayers.map((payer, idx) => (
               <View key={payer.user.id} style={billModalStyles.payer}>
                 <Text style={billModalStyles.payerText}>
@@ -123,6 +135,7 @@ export const InitialPayersModal = ({
                     isChecked={payer.assigned}
                     useBuiltInState={false}
                     onPress={() => {
+                      if (!canEdit) return;
                       const updated = editedPayers.map((p, i) =>
                         i === idx ? { ...p, assigned: !p.assigned } : p
                       );
