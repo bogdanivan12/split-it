@@ -60,7 +60,6 @@ export const AssignedPayersModal = ({
                       setEditedPayers(updated);
                     }}
                   />
-                  <Text style={billModalStyles.smallText}>Pays</Text>
                 </View>
               </View>
             ))}
@@ -130,7 +129,6 @@ export const InitialPayersModal = ({
                       setEditedPayers(updated);
                     }}
                   />
-                  <Text style={billModalStyles.smallText}>Pays</Text>
                 </View>
               </View>
             ))}
@@ -190,6 +188,7 @@ const billModalStyles = StyleSheet.create({
     flexDirection: "column",
     justifyContent: "center",
     alignItems: "center",
+    gap: 8,
   },
   smallText: {
     fontFamily: "AlegreyaMedium",

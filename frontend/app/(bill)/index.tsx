@@ -368,6 +368,7 @@ export default function Layout() {
                       onPress={() => {
                         if (p.isNew) {
                           deleteProduct(index);
+                          return;
                         }
                         setDeletingFieldIndex(index);
                         setEditingFieldIndex(null);
@@ -557,14 +558,17 @@ export default function Layout() {
                 <SavePrice
                   save={() => {
                     const newPrice = parseFloat(editedTotalPrice);
-                    const productsPrice =
-                      getAllProductsPriceSum() + restOfTheProductsPrice;
+                    const productsPrice = getAllProductsPriceSum();
                     if (newPrice < productsPrice) {
                       setEditedTotalPrice(totalPrice.toString());
                       return;
                     }
+                    const priceDiff = newPrice - totalPrice;
+                    const newRestOfTheProductsPrice =
+                      restOfTheProductsPrice + priceDiff;
+                    if (newRestOfTheProductsPrice < 0) return;
                     setTotalPrice(newPrice);
-                    setRestOfTheProductsPrice(newPrice - productsPrice);
+                    setRestOfTheProductsPrice(newRestOfTheProductsPrice);
                     setEditingFieldIndex(null);
                   }}
                   cancel={() => {
