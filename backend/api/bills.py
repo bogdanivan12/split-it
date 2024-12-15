@@ -45,6 +45,16 @@ async def create_bill(
                 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                                     detail="Payer not found")
 
+    bill_dict = bill.model_dump(by_alias=True)
+    bill_dict.pop("_id", None)
+    try:
+        db_result = db["bills"].insert_one(bill_dict)
+    except Exception as exception:
+        raise HTTPException(status_code=status.HTTP_424_FAILED_DEPENDENCY,
+                            detail=str(exception))
+
+    bill.id = PydanticObjectId(db_result.inserted_id)
+
     try:
         payment_ids = payments.create_payments(bill)
     except ValueError as exception:
@@ -58,10 +68,10 @@ async def create_bill(
     bill_dict = bill.model_dump(by_alias=True)
     bill_dict.pop("_id", None)
     try:
-        db_result = db["bills"].insert_one(bill_dict)
+        db["bills"].update_one({"_id": bill.id},
+                               {"$set": bill_dict})
     except Exception as exception:
         raise HTTPException(status_code=status.HTTP_424_FAILED_DEPENDENCY,
                             detail=str(exception))
 
-    bill.id = PydanticObjectId(db_result.inserted_id)
     return bill
