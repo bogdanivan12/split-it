@@ -6,7 +6,7 @@ export type Product = {
   totalPrice: number;
   assignedPayers: Payer[];
 };
-export type Payer = { user: UserSummary; assigned: boolean };
+export type Payer = { user: UserSummary; assigned: boolean; amount?: number };
 
 export type Bill = {
   owner: UserSummary;
@@ -14,6 +14,6 @@ export type Bill = {
   name: string;
   amount: number;
   dateCreated: string;
-  initialPayers: UserSummary[];
+  initialPayers: Payer[];
   products: Product[];
 };

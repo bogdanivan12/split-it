@@ -30,7 +30,6 @@ import {
   InitialPayersModal,
 } from "@/components/modals/PayersModal";
 import Tooltip from "react-native-walkthrough-tooltip";
-import { UserSummary } from "@/types/User.types";
 import { useBill } from "@/utils/hooks/useBill";
 
 const ButtonWithTooltip = ({
@@ -224,7 +223,7 @@ export default function Layout() {
       amount: totalPrice,
       dateCreated: bill?.dateCreated || "",
       id: bill?.id || "",
-      initialPayers: initialPayers.filter((p) => p.assigned).map((p) => p.user),
+      initialPayers,
       name: title,
       owner: {
         id: user!.id,
@@ -238,9 +237,9 @@ export default function Layout() {
   const mapFromBill = (bill: Bill, group: Group) => {
     setIsBillOwner(bill.owner.id === user!.id);
     setTotalPrice(bill.amount);
-    const initialPayersIds = bill.initialPayers.map((p) => p.id);
+    const initialPayersIds = bill.initialPayers.map((p) => p.user.id);
     setInitialPayers(
-      group.members.concat(group.owner).map((member) => {
+      [...group.members, group.owner].map((member) => {
         return {
           assigned: initialPayersIds.includes(member.id),
           user: member,
