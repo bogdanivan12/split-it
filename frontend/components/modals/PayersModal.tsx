@@ -13,20 +13,20 @@ import { generalStyles, modalStyles } from "@/constants/SharedStyles";
 import BouncyCheckbox from "react-native-bouncy-checkbox";
 import { Colors } from "@/constants/Theme";
 
-export const AssignedPayersModal = ({
+export const PayersModal = ({
   open,
   onClose,
   payers,
-  productName,
   save,
   canEdit,
 }: {
   open: boolean;
   onClose: () => void;
-  payers: Payer[];
-  productName: string;
   save: (payers: Payer[]) => void;
+  payers: Payer[];
   canEdit?: boolean;
+  productName?: string;
+  type: "initial" | "assigned";
 }) => {
   const [editedPayers, setEditedPayers] = useState(payers);
   useEffect(() => {
@@ -35,27 +35,56 @@ export const AssignedPayersModal = ({
   return (
     <CenteredModal onClose={onClose} visible={open}>
       <View style={billModalStyles.container}>
-        <Text style={modalStyles.modalTitle}>
-          Who should pay for this product?{"\n"}
-          {productName}
-        </Text>
+        <Text style={modalStyles.modalTitle}>Who pays this bill?</Text>
         <ScrollView
           contentContainerStyle={{
-            ...generalStyles.scrollContainer,
             marginTop: 20,
           }}
         >
-          <View style={billModalStyles.payersContainer}>
-            {editedPayers.map((payer, idx) => (
-              <View
-                key={payer.user.id}
-                style={billModalStyles.payer}
-                onStartShouldSetResponder={() => true}
+          <View
+            style={billModalStyles.gridContainer}
+            onStartShouldSetResponder={() => true}
+          >
+            <View style={billModalStyles.rowStyle}>
+              <Text
+                style={{
+                  ...billModalStyles.payerText,
+                  ...billModalStyles.cellStyle,
+                  color: Colors.theme1.text1,
+                }}
               >
-                <Text style={billModalStyles.payerText}>
+                Username
+              </Text>
+              <Text
+                style={{
+                  ...billModalStyles.payerText,
+                  ...billModalStyles.cellStyle,
+                  color: Colors.theme1.text1,
+                }}
+              >
+                Pays
+              </Text>
+              <Text
+                style={{
+                  ...billModalStyles.payerText,
+                  ...billModalStyles.cellStyle,
+                  color: Colors.theme1.text1,
+                }}
+              >
+                Fixed pay
+              </Text>
+            </View>
+            {editedPayers.map((payer, idx) => (
+              <View key={payer.user.id} style={billModalStyles.rowStyle}>
+                <Text
+                  style={{
+                    ...billModalStyles.payerText,
+                    ...billModalStyles.cellStyle,
+                  }}
+                >
                   {payer.user.username}
                 </Text>
-                <View style={billModalStyles.checkboxContainer}>
+                <View style={billModalStyles.cellStyle}>
                   <BouncyCheckbox
                     isChecked={payer.assigned}
                     useBuiltInState={false}
@@ -68,80 +97,20 @@ export const AssignedPayersModal = ({
                     }}
                   />
                 </View>
-              </View>
-            ))}
-            <TouchableOpacity
-              onPress={() => {
-                save(editedPayers);
-                onClose();
-              }}
-            >
-              <View style={billModalStyles.saveButton}>
-                <Text
-                  style={{
-                    ...billModalStyles.payerText,
-                    color: Colors.theme1.text1,
-                  }}
-                >
-                  Save
-                </Text>
-              </View>
-            </TouchableOpacity>
-          </View>
-        </ScrollView>
-      </View>
-    </CenteredModal>
-  );
-};
-
-export const InitialPayersModal = ({
-  open,
-  onClose,
-  payers,
-  save,
-  canEdit,
-}: {
-  open: boolean;
-  onClose: () => void;
-  save: (payers: Payer[]) => void;
-  payers: Payer[];
-  canEdit?: boolean;
-}) => {
-  const [editedPayers, setEditedPayers] = useState(payers);
-  useEffect(() => {
-    setEditedPayers(payers);
-  }, [payers]);
-  return (
-    <CenteredModal onClose={onClose} visible={open}>
-      <View style={billModalStyles.container}>
-        <Text style={modalStyles.modalTitle}>Who pays this bill?</Text>
-        <ScrollView
-          contentContainerStyle={{
-            ...generalStyles.scrollContainer,
-            marginTop: 20,
-          }}
-        >
-          <View
-            style={billModalStyles.payersContainer}
-            onStartShouldSetResponder={() => true}
-          >
-            {editedPayers.map((payer, idx) => (
-              <View key={payer.user.id} style={billModalStyles.payer}>
-                <Text style={billModalStyles.payerText}>
-                  {payer.user.username}
-                </Text>
-                <View style={billModalStyles.checkboxContainer}>
-                  <BouncyCheckbox
-                    isChecked={payer.assigned}
-                    useBuiltInState={false}
-                    onPress={() => {
-                      if (!canEdit) return;
-                      const updated = editedPayers.map((p, i) =>
-                        i === idx ? { ...p, assigned: !p.assigned } : p
-                      );
-                      setEditedPayers(updated);
-                    }}
-                  />
+                <View>
+                  <View style={billModalStyles.cellStyle}>
+                    <BouncyCheckbox
+                      isChecked={payer.assigned}
+                      useBuiltInState={false}
+                      onPress={() => {
+                        if (!canEdit) return;
+                        const updated = editedPayers.map((p, i) =>
+                          i === idx ? { ...p, assigned: !p.assigned } : p
+                        );
+                        setEditedPayers(updated);
+                      }}
+                    />
+                  </View>
                 </View>
               </View>
             ))}
@@ -170,17 +139,29 @@ export const InitialPayersModal = ({
 };
 
 const billModalStyles = StyleSheet.create({
+  gridContainer: {
+    width: "100%",
+    alignSelf: 'center',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  rowStyle: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-around",
+  },
+  cellStyle: {
+    flex: 1,
+    margin: 10,
+    // borderColor: 'black',
+    // borderWidth: 2
+  },
   container: {
     maxHeight: Dimensions.get("screen").height * 0.5,
     width: "90%",
     backgroundColor: Colors.theme1.background1,
     padding: 20,
     borderRadius: 20,
-  },
-  payer: {
-    flexDirection: "row",
-    justifyContent: "center",
-    gap: 10,
   },
   payerText: {
     fontFamily: "AlegreyaMedium",
@@ -190,21 +171,5 @@ const billModalStyles = StyleSheet.create({
     backgroundColor: Colors.theme1.button2,
     padding: 10,
     borderRadius: 10,
-  },
-  payersContainer: {
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 14,
-  },
-  checkboxContainer: {
-    flexDirection: "column",
-    justifyContent: "center",
-    alignItems: "center",
-    gap: 8,
-  },
-  smallText: {
-    fontFamily: "AlegreyaMedium",
-    fontSize: 14,
   },
 });

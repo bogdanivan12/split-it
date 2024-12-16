@@ -25,10 +25,7 @@ import { useGroup } from "@/utils/hooks/useGroup";
 import { useAuth } from "@/context/AuthContext";
 import { Group } from "@/types/Group.types";
 import { CenteredLogoLoadingComponent } from "@/components/LogoLoadingComponent";
-import {
-  AssignedPayersModal,
-  InitialPayersModal,
-} from "@/components/modals/PayersModal";
+import { PayersModal } from "@/components/modals/PayersModal";
 import Tooltip from "react-native-walkthrough-tooltip";
 import { useBill } from "@/utils/hooks/useBill";
 
@@ -724,7 +721,7 @@ export default function Layout() {
             </View>
           )}
         </ScrollView>
-        <AssignedPayersModal
+        <PayersModal
           onClose={() => {
             setAssignedPayersModalOpen(false);
             setSelectedProductIndex(null);
@@ -748,13 +745,15 @@ export default function Layout() {
               ? products[selectedProductIndex].name
               : ""
           }
+          type="assigned"
         />
-        <InitialPayersModal
+        <PayersModal
           onClose={() => setInitialPayersModalOpen(false)}
           canEdit={isBillOwner}
           open={initialPayersModalOpen}
           payers={initialPayers}
           save={(payers) => setInitialPayers(payers)}
+          type="initial"
         />
       </View>
     </TouchableWithoutFeedback>
