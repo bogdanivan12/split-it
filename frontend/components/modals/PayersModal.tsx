@@ -8,8 +8,9 @@ import {
   TouchableOpacity,
   Dimensions,
   StyleSheet,
+  TextInput,
 } from "react-native";
-import { generalStyles, modalStyles } from "@/constants/SharedStyles";
+import { modalStyles } from "@/constants/SharedStyles";
 import BouncyCheckbox from "react-native-bouncy-checkbox";
 import { Colors } from "@/constants/Theme";
 
@@ -86,31 +87,66 @@ export const PayersModal = ({
                 </Text>
                 <View style={billModalStyles.cellStyle}>
                   <BouncyCheckbox
+                    disableText
                     isChecked={payer.assigned}
                     useBuiltInState={false}
                     onPress={() => {
                       if (!canEdit) return;
                       const updated = editedPayers.map((p, i) =>
-                        i === idx ? { ...p, assigned: !p.assigned } : p
+                        i === idx ? { user: p.user, assigned: !p.assigned } : p
                       );
                       setEditedPayers(updated);
                     }}
                   />
                 </View>
-                <View>
-                  <View style={billModalStyles.cellStyle}>
+                <View style={billModalStyles.cellStyle}>
+                  {payer.assigned && (
                     <BouncyCheckbox
-                      isChecked={payer.assigned}
+                      disableText
+                      isChecked={payer.amount !== undefined}
                       useBuiltInState={false}
                       onPress={() => {
                         if (!canEdit) return;
+                        const updated = editedPayers.map((p, i) => {
+                          if (i === idx) {
+                            const upd: Payer = {
+                              user: p.user,
+                              assigned: p.assigned,
+                            };
+                            if (p.amount === undefined) {
+                              upd.amount = 0;
+                            }
+                            return upd;
+                          }
+                          return p;
+                        });
+                        setEditedPayers(updated);
+                      }}
+                    />
+                  )}
+                  {payer.amount !== undefined && (
+                    <TextInput
+                      style={{
+                        backgroundColor: "white",
+                        width: 40,
+                        borderRadius: 10,
+                        padding: 5,
+                      }}
+                      value={payer.amount?.toString() || ""}
+                      keyboardType="numeric"
+                      onChangeText={(text) => {
                         const updated = editedPayers.map((p, i) =>
-                          i === idx ? { ...p, assigned: !p.assigned } : p
+                          i === idx
+                            ? {
+                                ...p,
+                                amount: parseFloat(text.replace(",", ".")) || 0,
+                              }
+                            : p
                         );
                         setEditedPayers(updated);
                       }}
                     />
-                  </View>
+                  )}
                 </View>
               </View>
             ))}
@@ -141,20 +177,22 @@ export const PayersModal = ({
 const billModalStyles = StyleSheet.create({
   gridContainer: {
     width: "100%",
-    alignSelf: 'center',
-    alignItems: 'center',
-    justifyContent: 'center'
+    alignSelf: "center",
+    alignItems: "center",
+    justifyContent: "center",
   },
   rowStyle: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-around",
+    justifyContent: "space-between",
   },
   cellStyle: {
     flex: 1,
-    margin: 10,
-    // borderColor: 'black',
-    // borderWidth: 2
+    margin: 5,
+    gap: 5,
+    flexDirection: "row",
+    textAlign: "center",
+    justifyContent: "center",
   },
   container: {
     maxHeight: Dimensions.get("screen").height * 0.5,
