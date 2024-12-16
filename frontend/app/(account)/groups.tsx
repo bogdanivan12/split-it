@@ -145,7 +145,7 @@ const Groups: React.FC = () => {
                   asChild
                   href={{
                     pathname: `/(group)`,
-                    params: { id: grp.id.toLowerCase() },
+                    params: { id: grp.id },
                   }}
                 >
                   <Pressable style={styles.button}>
