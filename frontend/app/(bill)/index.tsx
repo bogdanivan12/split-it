@@ -58,6 +58,7 @@ const ButtonWithTooltip = ({
           onClose={() => setTooltipActive(false)}
           isVisible={tooltipActive}
           contentStyle={{ backgroundColor: Colors.theme1.button5 }}
+          childrenWrapperStyle={{ position: "absolute" }}
           tooltipStyle={{ maxWidth: "60%" }}
           content={
             <View>

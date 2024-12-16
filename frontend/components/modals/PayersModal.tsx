@@ -20,6 +20,8 @@ export const PayersModal = ({
   payers,
   save,
   canEdit,
+  type,
+  productName,
 }: {
   open: boolean;
   onClose: () => void;
@@ -29,14 +31,30 @@ export const PayersModal = ({
   productName?: string;
   type: "initial" | "assigned";
 }) => {
-  const [editedPayers, setEditedPayers] = useState(payers);
+  const [editedPayers, setEditedPayers] = useState<
+    (Payer & { editedAmount?: string })[]
+  >(payers.map((p) => ({ ...p, editedAmount: p.amount?.toString() })));
   useEffect(() => {
-    setEditedPayers(payers);
+    setEditedPayers(
+      payers.map((p) => ({ ...p, editedAmount: p.amount?.toString() }))
+    );
   }, [payers]);
   return (
-    <CenteredModal onClose={onClose} visible={open}>
+    <CenteredModal
+      onClose={() => {
+        onClose();
+        setEditedPayers(
+          payers.map((p) => ({ ...p, editedAmount: p.amount?.toString() }))
+        );
+      }}
+      visible={open}
+    >
       <View style={billModalStyles.container}>
-        <Text style={modalStyles.modalTitle}>Who pays this bill?</Text>
+        <Text style={modalStyles.modalTitle}>
+          {type === "initial"
+            ? "Who pays this bill?"
+            : `Who should pay for this product\n${productName || ""}`}
+        </Text>
         <ScrollView
           contentContainerStyle={{
             marginTop: 20,
@@ -132,13 +150,14 @@ export const PayersModal = ({
                         borderRadius: 10,
                         padding: 5,
                       }}
-                      value={payer.amount?.toString() || ""}
+                      value={payer.editedAmount || ""}
                       keyboardType="numeric"
                       onChangeText={(text) => {
                         const updated = editedPayers.map((p, i) =>
                           i === idx
                             ? {
                                 ...p,
+                                editedAmount: text.replace(",", ".") || "",
                                 amount: parseFloat(text.replace(",", ".")) || 0,
                               }
                             : p
