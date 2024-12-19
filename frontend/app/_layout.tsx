@@ -53,7 +53,7 @@ function RootLayoutNav() {
       <Stack.Screen name="(intro)" options={{ headerShown: false }} />
       <Stack.Screen name="(account)" options={{ headerShown: false }} />
       <Stack.Screen name="(group)" options={{ headerShown: false }} />
-      <Stack.Screen name="(bills)" options={{ headerShown: false }} />
+      <Stack.Screen name="(bill)/index" options={{ headerShown: false, presentation: 'modal' }} />
     </Stack>
   );
 }

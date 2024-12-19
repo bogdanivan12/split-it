@@ -1,6 +1,7 @@
 import { Tabs as DTabs } from "expo-router";
 import type { ComponentProps } from "react";
 import { Colors } from "../constants/Theme";
+import { Dimensions } from "react-native";
 
 export const StyledTabs = (props: ComponentProps<typeof DTabs>) => {
   return (
@@ -21,8 +22,7 @@ export const StyledTabs = (props: ComponentProps<typeof DTabs>) => {
           borderTopWidth: 0,
           borderRadius: 100,
           bottom: 30,
-          left: "auto",
-          right: "auto",
+          left: Dimensions.get("window").width * 0.05,
           width: "90%",
           alignSelf: "center",
           justifyContent: "center",
@@ -32,8 +32,8 @@ export const StyledTabs = (props: ComponentProps<typeof DTabs>) => {
         tabBarItemStyle: {
           top: 10,
           alignSelf: "center",
-          justifyContent: "center", // Center content within each tab
-          alignItems: "center", // Horizontal centering
+          justifyContent: "center",
+          alignItems: "center",
         },
         tabBarShowLabel: false,
       }}
