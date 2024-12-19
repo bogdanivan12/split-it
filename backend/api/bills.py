@@ -96,7 +96,7 @@ async def get_bill(
     owner_dict = db["users"].find_one({"_id": bill.owner_id})
     owner = api_resp.UserSummary(_id=owner_dict["_id"],
                                  username=owner_dict["username"],
-                                 full_name=owner_dict["email"])
+                                 full_name=owner_dict["full_name"])
 
     initial_payers_info = []
     for payer in bill.initial_payers:
@@ -118,7 +118,7 @@ async def get_bill(
         payer_info = api_resp.FullInfoPayer(user=api_resp.UserSummary(
             _id=payer_dict["_id"],
             username=payer_dict["username"],
-            full_name=payer_dict["email"]
+            full_name=payer_dict["full_name"]
         ), amount=payer.amount)
         payers_info.append(payer_info)
 
@@ -132,7 +132,7 @@ async def get_bill(
                 user=api_resp.UserSummary(
                     _id=payer_dict["_id"],
                     username=payer_dict["username"],
-                    full_name=payer_dict["email"]
+                    full_name=payer_dict["full_name"]
                 ),
                 amount=payer.amount
             )
