@@ -13,7 +13,7 @@ export type Bill = {
   id: string;
   name: string;
   amount: number;
-  dateCreated: string;
+  dateCreated?: string;
   initialPayers: Payer[];
   products: Product[];
 };

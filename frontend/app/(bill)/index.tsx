@@ -40,7 +40,7 @@ const ButtonWithTooltip = ({
   onPress: () => void;
   icon?: ReactNode;
   text: string;
-  tooltipText: string;
+  tooltipText?: string;
   viewStyle?: ViewStyle;
   textStyle?: TextStyle;
 }) => {
@@ -54,28 +54,30 @@ const ButtonWithTooltip = ({
         </View>
       </TouchableOpacity>
       <View style={styles.tooltipButton}>
-        <Tooltip
-          onClose={() => setTooltipActive(false)}
-          isVisible={tooltipActive}
-          contentStyle={{ backgroundColor: Colors.theme1.button5 }}
-          childrenWrapperStyle={{ position: "absolute" }}
-          tooltipStyle={{ maxWidth: "60%" }}
-          content={
-            <View>
-              <Text style={{ fontFamily: "AlegreyaMedium" }}>
-                {tooltipText}
-              </Text>
-            </View>
-          }
-        >
-          <TouchableOpacity onPress={() => setTooltipActive(true)}>
-            <MaterialCommunityIcons
-              size={20}
-              name="information-variant"
-              color={Colors.theme1.text}
-            />
-          </TouchableOpacity>
-        </Tooltip>
+        {tooltipText && (
+          <Tooltip
+            onClose={() => setTooltipActive(false)}
+            isVisible={tooltipActive}
+            contentStyle={{ backgroundColor: Colors.theme1.button5 }}
+            childrenWrapperStyle={{ position: "absolute" }}
+            tooltipStyle={{ maxWidth: "60%" }}
+            content={
+              <View>
+                <Text style={{ fontFamily: "AlegreyaMedium" }}>
+                  {tooltipText}
+                </Text>
+              </View>
+            }
+          >
+            <TouchableOpacity onPress={() => setTooltipActive(true)}>
+              <MaterialCommunityIcons
+                size={20}
+                name="information-variant"
+                color={Colors.theme1.text}
+              />
+            </TouchableOpacity>
+          </Tooltip>
+        )}
       </View>
     </View>
   );
@@ -181,7 +183,7 @@ export default function Layout() {
     useState("0");
 
   const { get: getGroup, loading: groupLoading } = useGroup();
-  const { get: getBill, loading: billLoading } = useBill();
+  const { get: getBill, loading: billLoading, create: createBill } = useBill();
   const { token, user } = useAuth();
   const [isBillOwner, setIsBillOwner] = useState(true);
 
@@ -219,7 +221,7 @@ export default function Layout() {
     // if id is empty, then call the new api
     return {
       amount: totalPrice,
-      dateCreated: bill?.dateCreated || "",
+      ...(bill?.dateCreated && { dateCreated: bill?.dateCreated }),
       id: bill?.id || "",
       initialPayers,
       name: title,
@@ -230,6 +232,27 @@ export default function Layout() {
       },
       products,
     };
+  };
+
+  const truncate = (text: string) => {
+    let editedPrice = text.replace(",", ".").split(".");
+    let newPrice: string;
+
+    if (editedPrice.length > 1) {
+      newPrice = `${editedPrice[0]}.${editedPrice[1].substring(0, 2)}`;
+    } else {
+      newPrice = editedPrice[0];
+    }
+    return newPrice;
+  };
+
+  const save = async () => {
+    const b = mapToBill();
+    if (b.id.length > 0) {
+      // update
+    } else {
+      await createBill(b, groupId as string, token!);
+    }
   };
 
   const mapFromBill = (bill: Bill, group: Group) => {
@@ -430,7 +453,7 @@ export default function Layout() {
                                 i === index
                                   ? {
                                       ...p,
-                                      editedPrice: text.replace(",", "."),
+                                      editedPrice: truncate(text),
                                     }
                                   : p
                               )
@@ -556,7 +579,7 @@ export default function Layout() {
                           value: editedRestOfTheProductsPrice,
                           onChangeText: (text) => {
                             setEditedRestOfTheProductsPrice(
-                              text.replace(",", ".")
+                              truncate(text)
                             );
                           },
                           onFocus: () => {
@@ -645,7 +668,7 @@ export default function Layout() {
                     underlineColorAndroid: "transparent",
                     value: editedTotalPrice,
                     onChangeText: (text) => {
-                      setEditedTotalPrice(text.replace(",", "."));
+                      setEditedTotalPrice(truncate(text));
                     },
                     onFocus: () => {
                       resetProductsPrice();
@@ -718,6 +741,17 @@ export default function Layout() {
                 }
                 text="Who paid?"
                 tooltipText="Set the group members that initially paid/will pay for this bill"
+              />
+              <ButtonWithTooltip
+                onPress={save}
+                icon={
+                  <FontAwesome6
+                    name="people-roof"
+                    size={20}
+                    color={Colors.theme1.text2}
+                  />
+                }
+                text="Save"
               />
             </View>
           )}

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { fetcher } from "../fetcher";
 import { ApiError } from "@/types/ApiError.types";
-import { Bill } from "@/types/Bill.types";
+import { Bill, Payer } from "@/types/Bill.types";
 
 const dummyBills: Bill[] = [
   {
@@ -45,6 +45,36 @@ const dummyBills: Bill[] = [
   },
 ];
 
+function distributeAmounts(payers: Payer[], totalAmount: number) {
+  const assignedPayers = payers.filter(
+    (payer) => payer.assigned && payer.amount !== undefined && payer.amount > 0
+  );
+  const assignedPayersWithNoAmount = payers.filter(
+    (payer) =>
+      payer.assigned && (payer.amount === undefined || payer.amount === 0)
+  );
+
+  const assignedTotal = assignedPayers.reduce(
+    (sum, payer) => sum + (payer.amount || 0),
+    0
+  );
+  const remainingAmount = totalAmount - assignedTotal;
+
+  if (remainingAmount < 0) {
+    throw new Error("Assigned amounts exceed the total amount");
+  }
+
+  const equalShare = remainingAmount / assignedPayersWithNoAmount.length;
+
+  return payers.map((payer) => ({
+    user: payer.user,
+    amount:
+      payer.assigned && payer.amount !== undefined && payer.amount > 0
+        ? payer.amount || 0
+        : equalShare,
+  }));
+}
+
 export const useBill = () => {
   const [loading, setLoading] = useState(false);
 
@@ -73,7 +103,40 @@ export const useBill = () => {
     }
   };
 
-  const create = async () => {};
+  const create = async (bill: Bill, groupId: string, token: string) => {
+    try {
+      setLoading(true);
+
+      const req = {
+        group_id: groupId,
+        name: bill.name,
+        description: "",
+        initial_payers: distributeAmounts(bill.initialPayers, bill.amount),
+        payer_ids: [],
+        bill_type: "SPLIT_BY_PRODUCTS",
+        products: bill.products.map((p) => ({
+          name: p.name,
+          assigned_payers: distributeAmounts(p.assignedPayers, p.totalPrice),
+          quantity: p.quantity,
+          total_price: p.totalPrice,
+        })),
+      };
+      console.log(JSON.stringify(req));
+      const x = await fetcher({
+        endpoint: "/api/v1/bills/",
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: req,
+      });
+      console.log(JSON.stringify(x));
+    } catch (error) {
+      throw Error("Could not create bill");
+    } finally {
+      setLoading(false);
+    }
+  };
   const del = async () => {};
 
   return {
