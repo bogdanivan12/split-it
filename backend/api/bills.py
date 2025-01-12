@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, List
 from datetime import datetime
 from starlette import status
 from beanie import PydanticObjectId
@@ -167,6 +167,26 @@ async def get_bill(
         products_info=products_info
     )
     return bill_info
+
+
+@router.get("/", status_code=status.HTTP_200_OK,
+            response_model=List[api_resp.FullInfoBill])
+async def get_all_bills(
+        user: Annotated[models.User, Depends(users.get_current_user)]
+):
+    """
+    # Get all bills
+    This endpoint returns all bills.
+    """
+    # Get all bills where the user is present either as a payer or as an initial payer
+    user_groups = db["groups"].find({"member_ids": {"$in": [user.id]}})
+    user_group_ids = [group["_id"] for group in user_groups]
+    bills = db["bills"].find({"group_id": {"$in": user_group_ids}})
+
+    bills_info = []
+    for bill in bills:
+        bills_info.append(await get_bill(bill["_id"], user))
+    return bills_info
 
 
 @router.delete("/{bill_id}", status_code=status.HTTP_204_NO_CONTENT)
