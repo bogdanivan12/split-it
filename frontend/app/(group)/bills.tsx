@@ -2,7 +2,6 @@ import {
   View,
   Text,
   StyleSheet,
-  FlatList,
   TouchableOpacity,
   ScrollView,
 } from "react-native";
@@ -29,7 +28,6 @@ const Bills: React.FC = () => {
   const removeBill = () => {};
 
   const isAdmin = (ownerId: string) => {
-    return true;
     return ownerId === user?.id;
   };
 

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { fetcher } from "../fetcher";
 import { ApiError } from "@/types/ApiError.types";
-import { Bill, Payer } from "@/types/Bill.types";
+import { Bill, BillApiResponse, Payer } from "@/types/Bill.types";
 
 const dummyBills: Bill[] = [
   {
@@ -82,7 +82,15 @@ export const useBill = () => {
     if (!token) return [];
     try {
       setLoading(true);
-      return dummyBills;
+      const bills = await fetcher<BillApiResponse[]>({
+        endpoint: "/api/v1/bills/",
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      console.log(JSON.stringify(bills));
+      return bills.map(b => new Bill(b));
     } catch (error) {
       const err = error as ApiError;
       throw Error("Could not get bills");
@@ -94,7 +102,14 @@ export const useBill = () => {
   const get = async (billId: string, token: string): Promise<Bill> => {
     try {
       setLoading(true);
-      return dummyBills[0];
+      const bill = await fetcher<BillApiResponse>({
+        endpoint: "/api/v1/bills/",
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      return new Bill(bill);
     } catch (error) {
       const err = error as ApiError;
       throw Error("Could not get bill");
@@ -138,6 +153,9 @@ export const useBill = () => {
     }
   };
   const del = async () => {};
+  const update = async (bill: Bill, groupId: string, token: string) => {
+
+  };
 
   return {
     loading,
@@ -145,5 +163,6 @@ export const useBill = () => {
     create,
     get,
     del,
+    update
   };
 };
