@@ -115,4 +115,5 @@ This diagram presents the contribution of each team member. For all the big stor
 
 ### Join group swimlane diagram (Octavian)
 
-![image](https://github.com/user-attachments/assets/117c9c33-8b90-4179-bf98-9beaf8580368)
+![image](https://github.com/user-attachments/assets/db65528c-3693-4432-98f7-cefaa21aa708)
+
