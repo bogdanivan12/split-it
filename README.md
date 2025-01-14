@@ -89,7 +89,7 @@ The functional requirements of the SplitIt application define its core functiona
 
 ### Gantt diagram (group diagram)
 
-This diagram presents the contribution of each team member. For all the big stories present in this diagram, there was at least one front-end task (did by Vlad) and at least one back-end task (did by the assigned member, which thought about how we can change the application's architecture to fit the desired needs of the task). For more complex flows, we decided on the approach together. Not all the tasks were done, as we planned our work for one extra sprint period.
+This diagram presents the contribution of each team member. For all the big stories present in this diagram, there was at least one front-end task (did by Vlad) and at least one back-end task (did by the assigned member, along database changes). For more complex flows, we decided on the approach together. We had periodic syncs to decide on how the JSON data object sent from the back-end and needed in front-end would look like. Not all the tasks were done, as we planned our work for one extra sprint period.
 
 ![image](https://github.com/user-attachments/assets/f6ba40f6-ffc3-4d78-874a-13eeb10ce03d)
 
