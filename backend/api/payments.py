@@ -172,3 +172,94 @@ async def get_group_payments(
                 for payment_dict in payment_dicts]
 
     return payments
+
+
+@router.patch("/{payment_id}/status", status_code=200,
+              response_model=api_resp.FullInfoPayment)
+async def change_payment_status(
+        payment_id: PydanticObjectId,
+        payment_status: models.PaymentStatus,
+        user: Annotated[models.User, Depends(users.get_current_user)]
+):
+    """
+    # Change payment status
+    This function changes the status of a payment.
+    """
+    payment_dict = db["payments"].find_one({"_id": payment_id})
+
+    if not payment_dict:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail="Payment not found")
+
+    sender_dict = db["users"].find_one({"_id": payment_dict["payer_id"]})
+    recipient_dict = db["users"].find_one(
+        {"_id": payment_dict["recipient_id"]})
+
+    if not payment_dict or not sender_dict or not recipient_dict:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail="Payment not found")
+
+    if not (sender_dict["_id"] == user.id
+            or recipient_dict["_id"] == user.id):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
+                            detail="You are not allowed to access this"
+                                   " payment")
+
+    db["payments"].update_one(
+        {"_id": payment_id},
+        {"$set": {"status": payment_status}}
+    )
+
+    payment_dict = db["payments"].find_one({"_id": payment_id})
+    payment = api_resp.FullInfoPayment(**payment_dict,
+                                       sender=sender_dict,
+                                       recipient=recipient_dict)
+    return payment
+
+
+@router.patch("/{payment_id}/method", status_code=200,
+              response_model=api_resp.FullInfoPayment)
+async def change_payment_method(
+        payment_id: PydanticObjectId,
+        payment_method: models.PaymentMethod,
+        user: Annotated[models.User, Depends(users.get_current_user)]
+):
+    """
+    # Change payment method
+    This function changes the method of a payment.
+    """
+    payment_dict = db["payments"].find_one({"_id": payment_id})
+
+    if not payment_dict:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail="Payment not found")
+
+    sender_dict = db["users"].find_one({"_id": payment_dict["payer_id"]})
+    recipient_dict = db["users"].find_one(
+        {"_id": payment_dict["recipient_id"]})
+
+    if not payment_dict or not sender_dict or not recipient_dict:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail="Payment not found")
+
+    if not (sender_dict["_id"] == user.id
+            or recipient_dict["_id"] == user.id):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
+                            detail="You are not allowed to access this"
+                                   " payment")
+
+    if not sender_dict["revolut_id"] or not recipient_dict["revolut_id"]:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail="Both users must have a Revolut ID to"
+                                   " change the payment method to Revolut")
+
+    db["payments"].update_one(
+        {"_id": payment_id},
+        {"$set": {"method": payment_method}}
+    )
+
+    payment_dict = db["payments"].find_one({"_id": payment_id})
+    payment = api_resp.FullInfoPayment(**payment_dict,
+                                       sender=sender_dict,
+                                       recipient=recipient_dict)
+    return payment
