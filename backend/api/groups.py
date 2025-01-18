@@ -8,6 +8,7 @@ from beanie import PydanticObjectId
 from fastapi import APIRouter, HTTPException, Depends
 
 from backend.api import users
+from backend.api import payments
 from backend.common import models
 from backend.common import config_info
 from backend.api import api_request_classes as api_req
@@ -305,4 +306,16 @@ def get_user_member_in_group(username: str, group_id: PydanticObjectId):
         return {"in_group": False, "has_request": True}
 
     return {"in_group": False, "has_request": False}
-    
+
+
+@router.get("/{group_id}/payments", status_code=status.HTTP_200_OK,
+            response_model=List[api_res.FullInfoPayment], tags=["payments"])
+async def get_group_payments(
+        group_id: PydanticObjectId,
+        user: Annotated[models.User, Depends(users.get_current_user)]
+):
+    """
+    # Get group payments
+    This function gets all payments for a group.
+    """
+    return await payments.get_group_payments(group_id, user)

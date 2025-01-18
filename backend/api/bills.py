@@ -101,24 +101,17 @@ async def get_bill(
     if user.id not in group_dict["member_ids"]:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
                             detail="You are not a member of this group")
-    group = api_resp.GroupSummary(_id=group_dict["_id"],
-                                  name=group_dict["name"])
+    group = api_resp.GroupSummary(**group_dict)
 
     owner_dict = db["users"].find_one({"_id": bill.owner_id})
-    owner = api_resp.UserSummary(_id=owner_dict["_id"],
-                                 username=owner_dict["username"],
-                                 full_name=owner_dict["full_name"])
+    owner = api_resp.UserSummary(**owner_dict)
 
     initial_payers_info = []
     for payer in bill.initial_payers:
         payer_dict = db["users"].find_one({"_id": payer.user_id})
         payer_info = api_resp.FullInfoPayer(
             user_id=payer.user_id,
-            user=api_resp.UserSummary(
-                _id=payer.user_id,
-                username=payer_dict["username"],
-                full_name=payer_dict["full_name"]
-            ),
+            user=api_resp.UserSummary(**payer_dict),
             amount=payer.amount
         )
         initial_payers_info.append(payer_info)
@@ -127,10 +120,7 @@ async def get_bill(
     for payer in bill.payers:
         payer_dict = db["users"].find_one({"_id": payer.user_id})
         payer_info = api_resp.FullInfoPayer(user=api_resp.UserSummary(
-            _id=payer_dict["_id"],
-            username=payer_dict["username"],
-            full_name=payer_dict["full_name"]
-        ), amount=payer.amount)
+            **payer_dict), amount=payer.amount)
         payers_info.append(payer_info)
 
     products_info = []
@@ -140,11 +130,7 @@ async def get_bill(
             payer_dict = db["users"].find_one({"_id": payer.user_id})
             payer_info = api_resp.FullInfoPayer(
                 user_id=payer.user_id,
-                user=api_resp.UserSummary(
-                    _id=payer_dict["_id"],
-                    username=payer_dict["username"],
-                    full_name=payer_dict["full_name"]
-                ),
+                user=api_resp.UserSummary(**payer_dict),
                 amount=payer.amount
             )
             assigned_payers_info.append(payer_info)

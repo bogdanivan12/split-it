@@ -8,6 +8,7 @@ from backend.api import bills
 from backend.api import users
 from backend.api import groups
 from backend.api import requests
+from backend.api import payments
 
 app = FastAPI(title="SplitIt API", version="1.0.0")
 app.include_router(auth.router)
@@ -15,6 +16,7 @@ app.include_router(groups.router)
 app.include_router(users.router)
 app.include_router(requests.router)
 app.include_router(bills.router)
+app.include_router(payments.router)
 
 
 @app.get("/", include_in_schema=False)
