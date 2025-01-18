@@ -72,6 +72,7 @@ class Bill(BaseModel):
     payers: Optional[List[Payer]] = Field(default_factory=list)
     products: Optional[List[Product]] = Field(default_factory=list)
     payment_ids: List[PydanticObjectId] = Field(default_factory=list)
+    amount: float = Field(gt=0)
 
     class Config:
         json_encoders = {PydanticObjectId: str}

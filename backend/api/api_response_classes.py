@@ -13,6 +13,7 @@ class UserSummary(BaseModel):
     id: Optional[PydanticObjectId] = Field(alias="_id", default=None)
     username: str
     full_name: Optional[str]
+    revolut_id: Optional[str]
 
     class Config:
         json_encoders = {PydanticObjectId: str}
@@ -79,3 +80,15 @@ class FullInfoBill(models.Bill):
     initial_payers_info: List[FullInfoPayer]
     payers_info: Optional[List[FullInfoPayer]] = None
     products_info: Optional[List[FullInfoProduct]] = None
+    amount: float
+
+    class Config:
+        json_encoders = {PydanticObjectId: str}
+
+
+class FullInfoPayment(models.Payment):
+    sender: UserSummary
+    recipient: UserSummary
+
+    class Config:
+        json_encoders = {PydanticObjectId: str}
