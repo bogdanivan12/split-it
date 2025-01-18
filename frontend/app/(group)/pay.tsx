@@ -57,7 +57,6 @@ const PayModal = ({
   payment: Paymentt;
 }) => {
   const [message, setMessage] = useState<string | null>(null);
-  const [value, setValue] = useState<string>("");
   return (
     <CenteredModal
       onClose={() => {
@@ -94,28 +93,11 @@ const PayModal = ({
               color={Colors.theme1.text2}
             />
           </TouchableOpacity>
-          <TextInput
-            style={{
-              backgroundColor: "white",
-              width: 50,
-              paddingHorizontal: 10,
-            }}
-            onChangeText={(t) => {
-              setMessage(null);
-              setValue(t);
-            }}
-            value={value}
-            keyboardType="numeric"
-          />
         </View>
         <TouchableOpacity
           onPress={() => {
-            if (value === "") {
-              setMessage("Enter how much you paid.");
-              return;
-            }
-            const paidValue = parseFloat(value);
-            console.log(paidValue);
+            // full payment
+            // call sendPaymentsNotifications
           }}
         >
           <View style={styles.payButton}>

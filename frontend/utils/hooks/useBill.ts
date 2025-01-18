@@ -3,6 +3,7 @@ import { fetcher } from "../fetcher";
 import { ApiError } from "@/types/ApiError.types";
 import { Bill, BillApiResponse, Payer } from "@/types/Bill.types";
 import { useGroup } from "./useGroup";
+import { Paymentt } from "@/types/Payment.types";
 
 const dummyBills: Bill[] = [
   {
@@ -43,6 +44,14 @@ const dummyBills: Bill[] = [
     dateCreated: "2023-12-10",
     initialPayers: [],
     products: [],
+  },
+];
+
+const dummyPayments: Paymentt[] = [
+  {
+    userTo: { fullName: "vlad rosu", id: "", username: "vlandero" },
+    userFrom: { fullName: "vlad rosu2", id: "", username: "vlandero2" },
+    amount: 34,
   },
 ];
 
@@ -146,6 +155,21 @@ export const useBill = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const sendPaymentNotification = async () => {
+    // dupa ce apasa pe butonul care da notificare ca a platit
+  };
+
+  const getPayments = async () => {
+    // ia toate payments in grup pentru user, se sorteaza apoi pe fiecare pagina
+    // verificam statusul paymentului si daca e in progress atunci poate accepta
+    return dummyPayments;
+  };
+
+  const acceptPayment = async () => {
+    // in momentul in care se apasa butonul de approve, se face si update pe paymet
+    // fetch update
   };
 
   const create = async (bill: Bill, groupId: string, token: string) => {
