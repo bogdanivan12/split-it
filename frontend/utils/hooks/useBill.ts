@@ -2,6 +2,7 @@ import { useState } from "react";
 import { fetcher } from "../fetcher";
 import { ApiError } from "@/types/ApiError.types";
 import { Bill, BillApiResponse, Payer } from "@/types/Bill.types";
+import { useGroup } from "./useGroup";
 
 const dummyBills: Bill[] = [
   {
@@ -78,40 +79,69 @@ function distributeAmounts(payers: Payer[], totalAmount: number) {
 export const useBill = () => {
   const [loading, setLoading] = useState(false);
 
+  const { get: getGroup } = useGroup();
+
   const getAll = async (groupId: string, token: string): Promise<Bill[]> => {
     if (!token) return [];
     try {
       setLoading(true);
-      const bills = await fetcher<BillApiResponse[]>({
-        endpoint: "/api/v1/bills/",
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      console.log(JSON.stringify(bills));
-      return bills.map(b => new Bill(b));
+      const group = await getGroup(groupId, token);
+      const bills = (
+        await fetcher<BillApiResponse[]>({
+          endpoint: "/api/v1/bills/",
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        })
+      ).filter((b) => b.group._id === groupId);
+      const members = group.members.concat(group.owner);
+      return bills.map(
+        (b) =>
+          new Bill(
+            b,
+            members.map((m) => ({
+              _id: m.id,
+              full_name: m.fullName,
+              username: m.username,
+            }))
+          )
+      );
     } catch (error) {
       const err = error as ApiError;
+      console.log(err.message);
       throw Error("Could not get bills");
     } finally {
       setLoading(false);
     }
   };
 
-  const get = async (billId: string, token: string): Promise<Bill> => {
+  const get = async (
+    billId: string,
+    groupId: string,
+    token: string
+  ): Promise<Bill> => {
     try {
       setLoading(true);
+      const group = await getGroup(groupId, token);
       const bill = await fetcher<BillApiResponse>({
-        endpoint: "/api/v1/bills/",
+        endpoint: `/api/v1/bills/${billId}`,
         method: "GET",
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
-      return new Bill(bill);
+      return new Bill(
+        bill,
+        group.members.map((m) => ({
+          _id: m.id,
+          full_name: m.fullName,
+          username: m.username,
+        }))
+      );
     } catch (error) {
       const err = error as ApiError;
+      console.log(err.message);
       throw Error("Could not get bill");
     } finally {
       setLoading(false);
@@ -153,9 +183,7 @@ export const useBill = () => {
     }
   };
   const del = async () => {};
-  const update = async (bill: Bill, groupId: string, token: string) => {
-
-  };
+  const update = async (bill: Bill, groupId: string, token: string) => {};
 
   return {
     loading,
@@ -163,6 +191,6 @@ export const useBill = () => {
     create,
     get,
     del,
-    update
+    update,
   };
 };

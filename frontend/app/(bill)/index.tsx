@@ -195,7 +195,7 @@ export default function Layout() {
       try {
         const gr = await getGroup(groupId as string, token!);
         if (billId) {
-          const b = await getBill(billId as string, token!);
+          const b = await getBill(billId as string, groupId as string, token!);
           setBill(b);
           mapFromBill(b, gr);
         } else {
@@ -209,7 +209,7 @@ export default function Layout() {
           );
         }
         setGroupDetails(gr);
-      } catch (err) {
+      } catch (err: any) {
         router.back();
       }
     };

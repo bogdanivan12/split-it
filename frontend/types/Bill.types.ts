@@ -6,9 +6,9 @@ export class Product {
   quantity!: number;
   totalPrice!: number;
   assignedPayers!: Payer[];
-  constructor(p: ProductApiResponse){
+  constructor(p: ProductApiResponse, groupMembers: UserSummaryApiResponse[]){
     return {
-      assignedPayers: p.assigned_payers_info.map(a => new Payer(a)),
+      assignedPayers: p.assigned_payers_info.map(a => new Payer({amount: a.amount, user: groupMembers.find(x => x._id === a.user_id)!})),
       name: p.name,
       quantity: p.quantity,
       totalPrice: p.total_price
@@ -20,7 +20,7 @@ export type ProductApiResponse = {
   name: string;
   total_price: number;
   quantity: number;
-  assigned_payers_info: PayerApiResponse[]
+  assigned_payers_info: {user_id: string, amount: number}[]
 };
 export class Payer {
   user!: UserSummary;
@@ -47,21 +47,21 @@ export class Bill {
   initialPayers!: Payer[];
   products!: Product[];
 
-  constructor(b: BillApiResponse) {
+  constructor(b: BillApiResponse, groupMembers: UserSummaryApiResponse[]) {
     return {
       owner: new UserSummary(b.owner),
       amount: b.total,
-      id: b.id,
+      id: b._id,
       initialPayers: b.initial_payers_info.map(p => new Payer(p)),
       name: b.name,
-      products: b.products_info.map(p => new Product(p)),
+      products: b.products_info.map(p => new Product(p, groupMembers)),
       dateCreated: b.date
     };
   }
 }
 
 export type BillApiResponse = {
-  id: string;
+  _id: string;
   name: string;
   description: string;
   date: string
