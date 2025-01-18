@@ -27,7 +27,7 @@ export class UserSummary {
   username!: string;
 
   constructor(us: UserSummaryApiResponse) {
-    console.log(`UserSummary ${JSON.stringify(us)}`)
+    console.log(`UserSummary ${JSON.stringify(us)}`);
     return {
       username: us.username,
       fullName: us.full_name,
@@ -43,9 +43,10 @@ export class User {
   groupIds!: string[];
   phoneNumber!: string;
   email!: string;
+  revolutId!: string;
 
   constructor(res: UserApiResponse) {
-    console.log(`User ${JSON.stringify(res)}`)
+    console.log(`User ${JSON.stringify(res)}`);
     return {
       email: res.email,
       id: res._id,
@@ -53,6 +54,7 @@ export class User {
       groupIds: res.group_ids,
       phoneNumber: res.phone_number || "",
       username: res.username,
+      revolutId: res.revolut_id || "",
     };
   }
 }

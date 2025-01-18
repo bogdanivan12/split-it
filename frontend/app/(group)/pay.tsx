@@ -4,7 +4,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   Dimensions,
-  TextInput,
+  Linking,
 } from "react-native";
 import React, { useEffect, useState } from "react";
 import { useLocalSearchParams } from "expo-router";
@@ -14,11 +14,13 @@ import { FontAwesome, MaterialIcons } from "@expo/vector-icons";
 import CenteredModal from "@/components/modals/CenteredModal";
 import { modalStyles } from "@/constants/SharedStyles";
 import { Message } from "@/components/Message";
+import { useBill } from "@/utils/hooks/useBill";
+import { useAuth } from "@/context/AuthContext";
 
 const Payment = ({
   userTo,
-  userFrom,
   amount,
+  status,
   onClick,
 }: Paymentt & { onClick: () => void }) => {
   return (
@@ -39,9 +41,11 @@ const Payment = ({
         >
           To pay: {amount}
         </Text>
-        <TouchableOpacity onPress={onClick}>
-          <FontAwesome name="money" size={20} color={Colors.theme1.text2} />
-        </TouchableOpacity>
+        {status === "NOT_STARTED" && (
+          <TouchableOpacity onPress={onClick}>
+            <FontAwesome name="money" size={20} color={Colors.theme1.text2} />
+          </TouchableOpacity>
+        )}
       </View>
     </View>
   );
@@ -86,7 +90,18 @@ const PayModal = ({
           }}
         >
           <Text style={{ ...styles.paymentText }}>Pay with Revolut</Text>
-          <TouchableOpacity>
+          <TouchableOpacity
+            onPress={async () => {
+              if(!payment.userTo.revolut){
+                setMessage("User did not set up revolut!")
+                return;
+              }
+              const url = `googlechrome://revolut.me/${payment.userTo.revolut}/${payment.amount}ron`;
+              const supported = await Linking.canOpenURL(url);
+              console.log(supported);
+              await Linking.openURL(url);
+            }}
+          >
             <MaterialIcons
               name="payment"
               size={20}
@@ -117,18 +132,13 @@ const PayModal = ({
   );
 };
 
-const dummyPayments: Paymentt[] = [
-  {
-    userTo: { fullName: "vlad rosu", id: "", username: "vlandero" },
-    userFrom: { fullName: "vlad rosu2", id: "", username: "vlandero2" },
-    amount: 34,
-  },
-];
-
 export default function Pay() {
   const { id } = useLocalSearchParams();
+  const { getPayments } = useBill();
   const [selectedPayment, setSelectedPayment] = useState<Paymentt | null>(null);
+  const { refreshUser, token, user } = useAuth();
   const [modalOpen, setModalOpen] = useState<boolean>(false);
+  const [payments, setPayments] = useState<Paymentt[]>([]);
 
   useEffect(() => {
     if (selectedPayment === null) {
@@ -137,18 +147,31 @@ export default function Pay() {
     }
     setModalOpen(true);
   }, [selectedPayment]);
+
+  useEffect(() => {
+    const f = async () => {
+      try {
+        const p = await getPayments();
+        setPayments(p);
+      } catch (error: any) {}
+    };
+    f();
+  });
   return (
     <View style={styles.container}>
       <View style={styles.paymentsContainer}>
-        {dummyPayments.map((p) => (
-          <Payment
-            key={`${p.userTo.username} to ${p.userFrom.username}`}
-            userTo={p.userTo}
-            userFrom={p.userFrom}
-            amount={p.amount}
-            onClick={() => setSelectedPayment(p)}
-          />
-        ))}
+        {payments
+          .filter((p) => p.status === "NOT_STARTED")
+          .map((p) => (
+            <Payment
+              key={`${p.userTo.username} to ${p.userFrom.username}`}
+              userTo={p.userTo}
+              userFrom={p.userFrom}
+              amount={p.amount}
+              onClick={() => setSelectedPayment(p)}
+              status={p.status}
+            />
+          ))}
       </View>
       {selectedPayment && (
         <PayModal

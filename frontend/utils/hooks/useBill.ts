@@ -49,9 +49,10 @@ const dummyBills: Bill[] = [
 
 const dummyPayments: Paymentt[] = [
   {
-    userTo: { fullName: "vlad rosu", id: "", username: "vlandero" },
+    userTo: { fullName: "vlad rosu", id: "", username: "vlandero", revolut: 'octavianapm' },
     userFrom: { fullName: "vlad rosu2", id: "", username: "vlandero2" },
     amount: 34,
+    status: 'IN_PROGRESS'
   },
 ];
 
@@ -189,6 +190,7 @@ export const useBill = () => {
           quantity: p.quantity,
           total_price: p.totalPrice,
         })),
+        amount: bill.amount
       };
       console.log(JSON.stringify(req));
       const x = await fetcher({
@@ -216,5 +218,8 @@ export const useBill = () => {
     get,
     del,
     update,
+    getPayments,
+    acceptPayment,
+    sendPaymentNotification
   };
 };
