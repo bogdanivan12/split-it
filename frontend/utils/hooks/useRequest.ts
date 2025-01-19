@@ -24,7 +24,7 @@ export const useRequest = () => {
       });
     } catch (error) {
       const err = error as ApiError;
-      console.log(err.message)
+      console.log(err.message);
       throw Error("Could not get requests");
     }
   };
@@ -48,7 +48,7 @@ export const useRequest = () => {
         : { sent: [], received: [] };
     } catch (error) {
       const err = error as ApiError;
-      console.log(err.message)
+      console.log(err.message);
       throw Error("Could not get requests");
     } finally {
       setLoading(false);

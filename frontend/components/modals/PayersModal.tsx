@@ -142,30 +142,36 @@ export const PayersModal = ({
                       }}
                     />
                   )}
-                  {payer.amount !== undefined && (
-                    <TextInput
-                      style={{
-                        backgroundColor: "white",
-                        width: 40,
-                        borderRadius: 10,
-                        padding: 5,
-                      }}
-                      value={payer.editedAmount || ""}
-                      keyboardType="numeric"
-                      onChangeText={(text) => {
-                        const updated = editedPayers.map((p, i) =>
-                          i === idx
-                            ? {
-                                ...p,
-                                editedAmount: text.replace(",", ".") || "",
-                                amount: parseFloat(text.replace(",", ".")) || 0,
-                              }
-                            : p
-                        );
-                        setEditedPayers(updated);
-                      }}
-                    />
-                  )}
+                  {payer.amount !== undefined &&
+                    (canEdit ? (
+                      <TextInput
+                        style={{
+                          backgroundColor: "white",
+                          width: 40,
+                          borderRadius: 10,
+                          padding: 5,
+                        }}
+                        value={payer.editedAmount || ""}
+                        keyboardType="numeric"
+                        onChangeText={(text) => {
+                          const updated = editedPayers.map((p, i) =>
+                            i === idx
+                              ? {
+                                  ...p,
+                                  editedAmount: text.replace(",", ".") || "",
+                                  amount:
+                                    parseFloat(text.replace(",", ".")) || 0,
+                                }
+                              : p
+                          );
+                          setEditedPayers(updated);
+                        }}
+                      />
+                    ) : (
+                      <Text style={{ width: 40, borderRadius: 10, padding: 5, fontFamily: 'AlegreyaMedium' }}>
+                        {payer.editedAmount}
+                      </Text>
+                    ))}
                 </View>
               </View>
             ))}
@@ -175,16 +181,18 @@ export const PayersModal = ({
                 onClose();
               }}
             >
-              <View style={billModalStyles.saveButton}>
-                <Text
-                  style={{
-                    ...billModalStyles.payerText,
-                    color: Colors.theme1.text1,
-                  }}
-                >
-                  Save
-                </Text>
-              </View>
+              {canEdit && (
+                <View style={billModalStyles.saveButton}>
+                  <Text
+                    style={{
+                      ...billModalStyles.payerText,
+                      color: Colors.theme1.text1,
+                    }}
+                  >
+                    Save
+                  </Text>
+                </View>
+              )}
             </TouchableOpacity>
           </View>
         </ScrollView>

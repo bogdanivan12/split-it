@@ -6,7 +6,7 @@ import {
   Dimensions,
 } from "react-native";
 import React, { useEffect, useState } from "react";
-import { useLocalSearchParams } from "expo-router";
+import { useGlobalSearchParams } from "expo-router";
 import { Colors } from "@/constants/Theme";
 import { Paymentt } from "@/types/Payment.types";
 import { AntDesign } from "@expo/vector-icons";
@@ -57,12 +57,14 @@ const ConfirmModal = ({
   onClose,
   open,
   payment,
-  refreshUser
+  onAccept,
+  onReject,
 }: {
   onClose: () => void;
   open: boolean;
   payment: Paymentt;
-  refreshUser: () => Promise<void>
+  onAccept: () => Promise<void>;
+  onReject: () => Promise<void>;
 }) => {
   return (
     <CenteredModal
@@ -90,9 +92,9 @@ const ConfirmModal = ({
           }}
         >
           <TouchableOpacity
-            onPress={() => {
-              // change status to not accepted
-              // refreshUser();
+            onPress={async () => {
+              await onReject();
+              onClose();
             }}
           >
             <View style={styles.payButton}>
@@ -101,9 +103,9 @@ const ConfirmModal = ({
           </TouchableOpacity>
 
           <TouchableOpacity
-            onPress={() => {
-              // change status to accepted
-              // refreshUser();
+            onPress={async () => {
+              await onAccept();
+              onClose();
             }}
           >
             <View style={styles.payButton}>
@@ -117,13 +119,13 @@ const ConfirmModal = ({
 };
 
 export default function Receive() {
-  const { id } = useLocalSearchParams();
-  const { getPayments } = useBill();
+  const { id } = useGlobalSearchParams();
+  const { getPayments, acceptPayment, rejectPayment } = useBill();
   const [selectedPayment, setSelectedPayment] = useState<Paymentt | null>(null);
   const { refreshUser, token, user } = useAuth();
   const [modalOpen, setModalOpen] = useState<boolean>(false);
   const [payments, setPayments] = useState<Paymentt[]>([]);
-
+  const [groupId] = useState(id as string);
   useEffect(() => {
     if (selectedPayment === null) {
       setModalOpen(false);
@@ -135,8 +137,12 @@ export default function Receive() {
   useEffect(() => {
     const f = async () => {
       try {
-        const p = await getPayments();
-        setPayments(p);
+        const p = await getPayments(groupId, token!);
+        setPayments(
+          p.filter(
+            (pm) => pm.userTo.id === user?.id && pm.status !== "COMPLETED"
+          )
+        );
       } catch (error: any) {}
     };
     f();
@@ -146,12 +152,9 @@ export default function Receive() {
       <View style={styles.paymentsContainer}>
         {payments.map((p) => (
           <Payment
+            {...p}
             key={`${p.userTo.username} to ${p.userFrom.username}`}
-            userTo={p.userTo}
-            userFrom={p.userFrom}
-            amount={p.amount}
             onClick={() => setSelectedPayment(p)}
-            status={p.status}
           />
         ))}
       </View>
@@ -159,8 +162,18 @@ export default function Receive() {
         <ConfirmModal
           payment={selectedPayment}
           open={modalOpen}
-          onClose={() => setSelectedPayment(null)}
-          refreshUser={refreshUser}
+          onClose={() => {
+            setSelectedPayment(null);
+            setModalOpen(false);
+          }}
+          onAccept={async () => {
+            await acceptPayment(selectedPayment.id, token!);
+            refreshUser();
+          }}
+          onReject={async () => {
+            await rejectPayment(selectedPayment.id, token!);
+            refreshUser();
+          }}
         />
       )}
     </View>

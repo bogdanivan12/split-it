@@ -27,7 +27,6 @@ export class UserSummary {
   username!: string;
 
   constructor(us: UserSummaryApiResponse) {
-    console.log(`UserSummary ${JSON.stringify(us)}`);
     return {
       username: us.username,
       fullName: us.full_name,
@@ -46,7 +45,6 @@ export class User {
   revolutId!: string;
 
   constructor(res: UserApiResponse) {
-    console.log(`User ${JSON.stringify(res)}`);
     return {
       email: res.email,
       id: res._id,

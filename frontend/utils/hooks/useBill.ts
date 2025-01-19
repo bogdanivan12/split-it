@@ -3,7 +3,11 @@ import { fetcher } from "../fetcher";
 import { ApiError } from "@/types/ApiError.types";
 import { Bill, BillApiResponse, Payer } from "@/types/Bill.types";
 import { useGroup } from "./useGroup";
-import { Paymentt } from "@/types/Payment.types";
+import {
+  PaymentApiResponse,
+  PaymentStatus,
+  Paymentt,
+} from "@/types/Payment.types";
 
 const dummyBills: Bill[] = [
   {
@@ -47,15 +51,6 @@ const dummyBills: Bill[] = [
   },
 ];
 
-const dummyPayments: Paymentt[] = [
-  {
-    userTo: { fullName: "vlad rosu", id: "", username: "vlandero", revolut: 'octavianapm' },
-    userFrom: { fullName: "vlad rosu2", id: "", username: "vlandero2" },
-    amount: 34,
-    status: 'IN_PROGRESS'
-  },
-];
-
 function distributeAmounts(payers: Payer[], totalAmount: number) {
   const assignedPayers = payers.filter(
     (payer) => payer.assigned && payer.amount !== undefined && payer.amount > 0
@@ -78,15 +73,13 @@ function distributeAmounts(payers: Payer[], totalAmount: number) {
   const equalShare = remainingAmount / assignedPayersWithNoAmount.length;
 
   return payers.map((payer) => ({
-    user: payer.user,
-    amount:
-      payer.assigned && payer.amount !== undefined && payer.amount > 0
-        ? payer.amount || 0
-        : equalShare,
+    user_id: payer.user.id,
+    amount: !payer.assigned ? 0 : payer.amount || equalShare,
   }));
 }
 
 export const useBill = () => {
+  const OTHER_PRODUCTS_NAME = "_____otherproducts";
   const [loading, setLoading] = useState(false);
 
   const { get: getGroup } = useGroup();
@@ -141,14 +134,16 @@ export const useBill = () => {
           Authorization: `Bearer ${token}`,
         },
       });
-      return new Bill(
+
+      const b = new Bill(
         bill,
-        group.members.map((m) => ({
+        [...group.members, group.owner].map((m) => ({
           _id: m.id,
           full_name: m.fullName,
           username: m.username,
         }))
       );
+      return b;
     } catch (error) {
       const err = error as ApiError;
       console.log(err.message);
@@ -158,19 +153,80 @@ export const useBill = () => {
     }
   };
 
-  const sendPaymentNotification = async () => {
-    // dupa ce apasa pe butonul care da notificare ca a platit
+  const updateStatus = async (
+    paymentId: string,
+    status: PaymentStatus,
+    token: string
+  ) => {
+    await fetcher<BillApiResponse>({
+      endpoint: `/api/v1/payments/${paymentId}/status?payment_status=${status}`,
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
   };
 
-  const getPayments = async () => {
-    // ia toate payments in grup pentru user, se sorteaza apoi pe fiecare pagina
-    // verificam statusul paymentului si daca e in progress atunci poate accepta
-    return dummyPayments;
+  const sendPaymentNotification = async (paymentId: string, token: string) => {
+    try {
+      setLoading(true);
+      await updateStatus(paymentId, "IN_PROGRESS", token);
+    } catch (error) {
+      const err = error as ApiError;
+      console.log(err.body);
+      throw Error("Could not send payment notification");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const acceptPayment = async () => {
-    // in momentul in care se apasa butonul de approve, se face si update pe paymet
-    // fetch update
+  const acceptPayment = async (paymentId: string, token: string) => {
+    try {
+      setLoading(true);
+      await updateStatus(paymentId, "COMPLETED", token);
+    } catch (error) {
+      const err = error as ApiError;
+      console.log(err.message);
+      throw Error("Could not send payment notification");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const rejectPayment = async (paymentId: string, token: string) => {
+    try {
+      setLoading(true);
+      await updateStatus(paymentId, "NOT_STARTED", token);
+    } catch (error) {
+      const err = error as ApiError;
+      console.log(err.message);
+      throw Error("Could not send payment notification");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getPayments = async (groupId: string, token: string) => {
+    try {
+      setLoading(true);
+      const payments = await fetcher<PaymentApiResponse[]>({
+        endpoint: `/api/v1/groups/${groupId}/payments`,
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const p = payments.map((payment) => new Paymentt(payment));
+      return p;
+    } catch (error) {
+      const err = error as ApiError;
+      console.log(err.body);
+      console.log(err.message);
+      throw Error("Could not get payments");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const create = async (bill: Bill, groupId: string, token: string) => {
@@ -181,18 +237,23 @@ export const useBill = () => {
         group_id: groupId,
         name: bill.name,
         description: "",
-        initial_payers: distributeAmounts(bill.initialPayers, bill.amount),
+        initial_payers: distributeAmounts(
+          bill.initialPayers,
+          bill.amount
+        ).filter((p) => p.amount > 0),
         payer_ids: [],
         bill_type: "SPLIT_BY_PRODUCTS",
         products: bill.products.map((p) => ({
           name: p.name,
-          assigned_payers: distributeAmounts(p.assignedPayers, p.totalPrice),
-          quantity: p.quantity,
+          assigned_payers: distributeAmounts(
+            p.assignedPayers,
+            p.totalPrice
+          ).filter((p) => p.amount > 0),
+          quantity: 1,
           total_price: p.totalPrice,
         })),
-        amount: bill.amount
+        amount: bill.amount,
       };
-      console.log(JSON.stringify(req));
       const x = await fetcher({
         endpoint: "/api/v1/bills/",
         method: "POST",
@@ -201,25 +262,23 @@ export const useBill = () => {
         },
         body: req,
       });
-      console.log(JSON.stringify(x));
-    } catch (error) {
+    } catch (error: any) {
+      console.log(JSON.stringify(error.body));
       throw Error("Could not create bill");
     } finally {
       setLoading(false);
     }
   };
-  const del = async () => {};
-  const update = async (bill: Bill, groupId: string, token: string) => {};
 
   return {
     loading,
     getAll,
     create,
     get,
-    del,
-    update,
     getPayments,
     acceptPayment,
-    sendPaymentNotification
+    rejectPayment,
+    sendPaymentNotification,
+    OTHER_PRODUCTS_NAME,
   };
 };

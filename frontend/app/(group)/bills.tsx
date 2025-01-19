@@ -18,7 +18,6 @@ const Bills: React.FC = () => {
   const { token, user } = useAuth();
   const { getAll } = useBill();
 
-  const isFocused = useIsFocused();
   const { id } = useGlobalSearchParams();
   const [groupId] = useState(id as string);
 

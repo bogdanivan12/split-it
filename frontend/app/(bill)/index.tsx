@@ -183,7 +183,13 @@ export default function Layout() {
     useState("0");
 
   const { get: getGroup, loading: groupLoading } = useGroup();
-  const { get: getBill, loading: billLoading, create: createBill } = useBill();
+  const {
+    get: getBill,
+    loading: billLoading,
+    create: createBill,
+    OTHER_PRODUCTS_NAME,
+  } = useBill();
+  const { refreshUser } = useAuth();
   const { token, user } = useAuth();
   const [isBillOwner, setIsBillOwner] = useState(true);
 
@@ -230,7 +236,19 @@ export default function Layout() {
         fullName: user!.fullName,
         username: user!.username,
       },
-      products,
+      products: (products as Product[]).concat([
+        {
+          assignedPayers: [...groupDetails!.members, groupDetails!.owner].map(
+            (m) => ({
+              assigned: true,
+              user: m,
+            })
+          ),
+          quantity: 1,
+          name: OTHER_PRODUCTS_NAME,
+          totalPrice: restOfTheProductsPrice,
+        },
+      ]),
     };
   };
 
@@ -252,12 +270,15 @@ export default function Layout() {
       // update
     } else {
       await createBill(b, groupId as string, token!);
+      refreshUser();
+      router.back();
     }
   };
 
   const mapFromBill = (bill: Bill, group: Group) => {
     setIsBillOwner(bill.owner.id === user!.id);
     setTotalPrice(bill.amount);
+    setTitle(bill.name);
     const initialPayersIds = bill.initialPayers.map((p) => p.user.id);
     setInitialPayers(
       [...group.members, group.owner].map((member) => {
@@ -268,16 +289,19 @@ export default function Layout() {
       })
     );
     setProducts(
-      bill.products.map((p) => ({
-        ...p,
-        isNew: false,
-        split: false,
-        editedPrice: p.totalPrice.toString(),
-      }))
+      bill.products
+        .filter((p) => p.name !== OTHER_PRODUCTS_NAME)
+        .map((p) => ({
+          ...p,
+          isNew: false,
+          split: false,
+          editedPrice: p.totalPrice.toString(),
+        }))
     );
     setRestOfTheProductsPrice(
       bill.amount -
         bill.products
+          .filter((b) => b.name !== OTHER_PRODUCTS_NAME)
           .map((p) => p.totalPrice)
           .reduce((acc, crt) => acc + crt, 0)
     );
@@ -406,28 +430,6 @@ export default function Layout() {
                     }}
                   />
                   <View style={styles.productData}>
-                    <View style={styles.productInputContainer}>
-                      <EditableInput
-                        canEdit={isBillOwner}
-                        textInputProps={{
-                          style: styles.productInput,
-                          placeholder: "...",
-                          keyboardType: "numeric",
-                          placeholderTextColor: Colors.theme1.inputPlaceholder,
-                          underlineColorAndroid: "transparent",
-                          value: p.quantity.toString(),
-                          onChangeText: (text) => {
-                            const updatedProducts = products.map((product, i) =>
-                              i === index
-                                ? { ...product, quantity: parseInt(text) }
-                                : product
-                            );
-                            setProducts(updatedProducts);
-                          },
-                        }}
-                      />
-                      <Text style={styles.productInputText}>Quantity</Text>
-                    </View>
                     <View
                       style={{
                         ...styles.productInputContainer,
@@ -578,9 +580,7 @@ export default function Layout() {
                           underlineColorAndroid: "transparent",
                           value: editedRestOfTheProductsPrice,
                           onChangeText: (text) => {
-                            setEditedRestOfTheProductsPrice(
-                              truncate(text)
-                            );
+                            setEditedRestOfTheProductsPrice(truncate(text));
                           },
                           onFocus: () => {
                             resetProductsPrice();
@@ -607,7 +607,9 @@ export default function Layout() {
                       setEditingFieldIndex(null);
                     }}
                     cancel={() => {
-                      setEditedRestOfTheProductsPrice(totalPrice.toString());
+                      setEditedRestOfTheProductsPrice(
+                        restOfTheProductsPrice.toString()
+                      );
                       setEditingFieldIndex(null);
                     }}
                   />
