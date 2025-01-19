@@ -47,6 +47,7 @@ class CreateBillRequest(BaseModel):
     date: datetime = Field(default_factory=datetime.now)
     payer_ids: Optional[List[models.Payer]] = Field(default_factory=list)
     products: Optional[List[models.Product]] = Field(default_factory=list)
+    amount: float = Field(gt=0)
 
     class Config:
         json_encoders = {PydanticObjectId: str}
