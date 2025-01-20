@@ -117,9 +117,16 @@ export default function Profile() {
     playAnimationTimeout(() => {
       update(
         {
-          ...(editedUser.email !== user?.email && {email: editedUser.email}),
-          ...(editedUser.fullName !== user?.fullName && {full_name: editedUser.fullName}),
-          ...(editedUser.phoneNumber !== user?.phoneNumber && {phone_number: editedUser.phoneNumber}),
+          ...(editedUser.email !== user?.email && { email: editedUser.email }),
+          ...(editedUser.fullName !== user?.fullName && {
+            full_name: editedUser.fullName,
+          }),
+          ...(editedUser.phoneNumber !== user?.phoneNumber && {
+            phone_number: editedUser.phoneNumber,
+          }),
+          ...(editedUser.revolutId !== user?.revolutId && {
+            revolut_id: editedUser.revolutId,
+          }),
         },
         token!
       )
@@ -241,6 +248,19 @@ export default function Profile() {
                 })
               }
               value={editedUser.fullName || ""}
+            />
+
+            <ProfileField
+              isEditing={isEditing}
+              name="Revolut id"
+              onChange={(text) =>
+                !actionsBlocked &&
+                setEditedUser({
+                  ...editedUser,
+                  ...(text.trim().length > 0 && { revolutId: text }),
+                })
+              }
+              value={editedUser.revolutId || ""}
             />
 
             <ProfileField

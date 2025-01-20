@@ -13,7 +13,7 @@ class UserSummary(BaseModel):
     id: Optional[PydanticObjectId] = Field(alias="_id", default=None)
     username: str
     full_name: Optional[str]
-    revolut_id: Optional[str]
+    revolut_id: Optional[str] = ""
 
     class Config:
         json_encoders = {PydanticObjectId: str}

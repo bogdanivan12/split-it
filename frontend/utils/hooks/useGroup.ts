@@ -24,6 +24,7 @@ export const useGroup = () => {
       return new Group(res);
     } catch (error) {
       const err = error as ApiError;
+      console.log(err.body)
       throw Error("Could not get group. Please try again.");
     } finally {
       setLoading(false);

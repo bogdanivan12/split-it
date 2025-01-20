@@ -42,6 +42,7 @@ export class User {
   groupIds!: string[];
   phoneNumber!: string;
   email!: string;
+  revolutId!: string;
 
   constructor(res: UserApiResponse) {
     return {
@@ -51,6 +52,7 @@ export class User {
       groupIds: res.group_ids,
       phoneNumber: res.phone_number || "",
       username: res.username,
+      revolutId: res.revolut_id || "",
     };
   }
 }

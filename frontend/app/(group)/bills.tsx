@@ -2,7 +2,6 @@ import {
   View,
   Text,
   StyleSheet,
-  FlatList,
   TouchableOpacity,
   ScrollView,
 } from "react-native";
@@ -19,7 +18,6 @@ const Bills: React.FC = () => {
   const { token, user } = useAuth();
   const { getAll } = useBill();
 
-  const isFocused = useIsFocused();
   const { id } = useGlobalSearchParams();
   const [groupId] = useState(id as string);
 
@@ -29,7 +27,6 @@ const Bills: React.FC = () => {
   const removeBill = () => {};
 
   const isAdmin = (ownerId: string) => {
-    return true;
     return ownerId === user?.id;
   };
 

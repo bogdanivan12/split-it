@@ -40,7 +40,7 @@ const ButtonWithTooltip = ({
   onPress: () => void;
   icon?: ReactNode;
   text: string;
-  tooltipText: string;
+  tooltipText?: string;
   viewStyle?: ViewStyle;
   textStyle?: TextStyle;
 }) => {
@@ -54,28 +54,30 @@ const ButtonWithTooltip = ({
         </View>
       </TouchableOpacity>
       <View style={styles.tooltipButton}>
-        <Tooltip
-          onClose={() => setTooltipActive(false)}
-          isVisible={tooltipActive}
-          contentStyle={{ backgroundColor: Colors.theme1.button5 }}
-          childrenWrapperStyle={{ position: "absolute" }}
-          tooltipStyle={{ maxWidth: "60%" }}
-          content={
-            <View>
-              <Text style={{ fontFamily: "AlegreyaMedium" }}>
-                {tooltipText}
-              </Text>
-            </View>
-          }
-        >
-          <TouchableOpacity onPress={() => setTooltipActive(true)}>
-            <MaterialCommunityIcons
-              size={20}
-              name="information-variant"
-              color={Colors.theme1.text}
-            />
-          </TouchableOpacity>
-        </Tooltip>
+        {tooltipText && (
+          <Tooltip
+            onClose={() => setTooltipActive(false)}
+            isVisible={tooltipActive}
+            contentStyle={{ backgroundColor: Colors.theme1.button5 }}
+            childrenWrapperStyle={{ position: "absolute" }}
+            tooltipStyle={{ maxWidth: "60%" }}
+            content={
+              <View>
+                <Text style={{ fontFamily: "AlegreyaMedium" }}>
+                  {tooltipText}
+                </Text>
+              </View>
+            }
+          >
+            <TouchableOpacity onPress={() => setTooltipActive(true)}>
+              <MaterialCommunityIcons
+                size={20}
+                name="information-variant"
+                color={Colors.theme1.text}
+              />
+            </TouchableOpacity>
+          </Tooltip>
+        )}
       </View>
     </View>
   );
@@ -181,7 +183,13 @@ export default function Layout() {
     useState("0");
 
   const { get: getGroup, loading: groupLoading } = useGroup();
-  const { get: getBill, loading: billLoading } = useBill();
+  const {
+    get: getBill,
+    loading: billLoading,
+    create: createBill,
+    OTHER_PRODUCTS_NAME,
+  } = useBill();
+  const { refreshUser } = useAuth();
   const { token, user } = useAuth();
   const [isBillOwner, setIsBillOwner] = useState(true);
 
@@ -193,7 +201,7 @@ export default function Layout() {
       try {
         const gr = await getGroup(groupId as string, token!);
         if (billId) {
-          const b = await getBill(billId as string, token!);
+          const b = await getBill(billId as string, groupId as string, token!);
           setBill(b);
           mapFromBill(b, gr);
         } else {
@@ -207,7 +215,7 @@ export default function Layout() {
           );
         }
         setGroupDetails(gr);
-      } catch (err) {
+      } catch (err: any) {
         router.back();
       }
     };
@@ -219,7 +227,7 @@ export default function Layout() {
     // if id is empty, then call the new api
     return {
       amount: totalPrice,
-      dateCreated: bill?.dateCreated || "",
+      ...(bill?.dateCreated && { dateCreated: bill?.dateCreated }),
       id: bill?.id || "",
       initialPayers,
       name: title,
@@ -228,13 +236,49 @@ export default function Layout() {
         fullName: user!.fullName,
         username: user!.username,
       },
-      products,
+      products: (products as Product[]).concat([
+        {
+          assignedPayers: [...groupDetails!.members, groupDetails!.owner].map(
+            (m) => ({
+              assigned: true,
+              user: m,
+            })
+          ),
+          quantity: 1,
+          name: OTHER_PRODUCTS_NAME,
+          totalPrice: restOfTheProductsPrice,
+        },
+      ]),
     };
+  };
+
+  const truncate = (text: string) => {
+    let editedPrice = text.replace(",", ".").split(".");
+    let newPrice: string;
+
+    if (editedPrice.length > 1) {
+      newPrice = `${editedPrice[0]}.${editedPrice[1].substring(0, 2)}`;
+    } else {
+      newPrice = editedPrice[0];
+    }
+    return newPrice;
+  };
+
+  const save = async () => {
+    const b = mapToBill();
+    if (b.id.length > 0) {
+      // update
+    } else {
+      await createBill(b, groupId as string, token!);
+      refreshUser();
+      router.back();
+    }
   };
 
   const mapFromBill = (bill: Bill, group: Group) => {
     setIsBillOwner(bill.owner.id === user!.id);
     setTotalPrice(bill.amount);
+    setTitle(bill.name);
     const initialPayersIds = bill.initialPayers.map((p) => p.user.id);
     setInitialPayers(
       [...group.members, group.owner].map((member) => {
@@ -245,16 +289,19 @@ export default function Layout() {
       })
     );
     setProducts(
-      bill.products.map((p) => ({
-        ...p,
-        isNew: false,
-        split: false,
-        editedPrice: p.totalPrice.toString(),
-      }))
+      bill.products
+        .filter((p) => p.name !== OTHER_PRODUCTS_NAME)
+        .map((p) => ({
+          ...p,
+          isNew: false,
+          split: false,
+          editedPrice: p.totalPrice.toString(),
+        }))
     );
     setRestOfTheProductsPrice(
       bill.amount -
         bill.products
+          .filter((b) => b.name !== OTHER_PRODUCTS_NAME)
           .map((p) => p.totalPrice)
           .reduce((acc, crt) => acc + crt, 0)
     );
@@ -383,28 +430,6 @@ export default function Layout() {
                     }}
                   />
                   <View style={styles.productData}>
-                    <View style={styles.productInputContainer}>
-                      <EditableInput
-                        canEdit={isBillOwner}
-                        textInputProps={{
-                          style: styles.productInput,
-                          placeholder: "...",
-                          keyboardType: "numeric",
-                          placeholderTextColor: Colors.theme1.inputPlaceholder,
-                          underlineColorAndroid: "transparent",
-                          value: p.quantity.toString(),
-                          onChangeText: (text) => {
-                            const updatedProducts = products.map((product, i) =>
-                              i === index
-                                ? { ...product, quantity: parseInt(text) }
-                                : product
-                            );
-                            setProducts(updatedProducts);
-                          },
-                        }}
-                      />
-                      <Text style={styles.productInputText}>Quantity</Text>
-                    </View>
                     <View
                       style={{
                         ...styles.productInputContainer,
@@ -430,7 +455,7 @@ export default function Layout() {
                                 i === index
                                   ? {
                                       ...p,
-                                      editedPrice: text.replace(",", "."),
+                                      editedPrice: truncate(text),
                                     }
                                   : p
                               )
@@ -555,9 +580,7 @@ export default function Layout() {
                           underlineColorAndroid: "transparent",
                           value: editedRestOfTheProductsPrice,
                           onChangeText: (text) => {
-                            setEditedRestOfTheProductsPrice(
-                              text.replace(",", ".")
-                            );
+                            setEditedRestOfTheProductsPrice(truncate(text));
                           },
                           onFocus: () => {
                             resetProductsPrice();
@@ -584,7 +607,9 @@ export default function Layout() {
                       setEditingFieldIndex(null);
                     }}
                     cancel={() => {
-                      setEditedRestOfTheProductsPrice(totalPrice.toString());
+                      setEditedRestOfTheProductsPrice(
+                        restOfTheProductsPrice.toString()
+                      );
                       setEditingFieldIndex(null);
                     }}
                   />
@@ -645,7 +670,7 @@ export default function Layout() {
                     underlineColorAndroid: "transparent",
                     value: editedTotalPrice,
                     onChangeText: (text) => {
-                      setEditedTotalPrice(text.replace(",", "."));
+                      setEditedTotalPrice(truncate(text));
                     },
                     onFocus: () => {
                       resetProductsPrice();
@@ -718,6 +743,17 @@ export default function Layout() {
                 }
                 text="Who paid?"
                 tooltipText="Set the group members that initially paid/will pay for this bill"
+              />
+              <ButtonWithTooltip
+                onPress={save}
+                icon={
+                  <FontAwesome6
+                    name="people-roof"
+                    size={20}
+                    color={Colors.theme1.text2}
+                  />
+                }
+                text="Save"
               />
             </View>
           )}

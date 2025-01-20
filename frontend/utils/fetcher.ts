@@ -1,7 +1,7 @@
 import { ApiError } from "@/types/ApiError.types";
 import { BASE_URL } from "@env";
 
-export type HTTPMethod = "POST" | "GET" | "PUT" | "DELETE";
+export type HTTPMethod = "POST" | "GET" | "PUT" | "DELETE" | "PATCH";
 
 export const fetcher = async <T>({
   endpoint,

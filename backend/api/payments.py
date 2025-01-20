@@ -75,6 +75,7 @@ def create_payments(bill: models.Bill):
     This function creates payments for a bill.
     """
     initialization = initialize_total_amounts(bill)
+    print(initialization)
     total_amount = initialization["total_amount"]
     amounts_to_pay = initialization["amounts_to_pay"]
     amounts_to_receive = initialization["amounts_to_receive"]
@@ -95,7 +96,7 @@ def create_payments(bill: models.Bill):
             payment_dict = payment.model_dump(by_alias=True)
             payment_dict.pop("_id", None)
             payments.append(payment_dict)
-
+    print(payments)
     if not payments:
         return []
 
